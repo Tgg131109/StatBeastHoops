@@ -9,6 +9,9 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject var apiManager : DataManager
+    @StateObject var settingsManager : SettingsManager
+    @StateObject var locationManager : LocationManager
+    @StateObject var soundsManager : SoundsManager
     
 //    @State private var showComparePage: Bool = false
 //    @State private var showSettingsPage: Bool = false
@@ -19,6 +22,8 @@ struct HomeView: View {
     @State var players = [Player]()
     @State var criteria = [String]()
     @State var leaders = [Player]()
+    
+    @Binding var myTeamID : Int
     
     let teams = Team.teamData
     let searchScopes = ["All", "Players", "Teams"]
@@ -117,7 +122,7 @@ struct HomeView: View {
                 
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack {
-                        NavButtonsView(apiManager: apiManager)
+                        NavButtonsView(apiManager: apiManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager, myTeamID: $myTeamID)
                     }
                 }
             }.toolbarTitleDisplayMode(.inline)
@@ -188,5 +193,5 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView(apiManager: DataManager())
+    HomeView(apiManager: DataManager(), settingsManager: SettingsManager(), locationManager: LocationManager(), soundsManager: SoundsManager(), myTeamID: .constant(Team.teamData[30].teamID))
 }

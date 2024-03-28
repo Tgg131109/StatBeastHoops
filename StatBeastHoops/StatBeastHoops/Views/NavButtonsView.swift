@@ -9,6 +9,12 @@ import SwiftUI
 
 struct NavButtonsView: View {
     @StateObject var apiManager : DataManager
+//    @StateObject var favoritesManager = FavoritesManager()
+    @StateObject var settingsManager : SettingsManager
+    @StateObject var locationManager : LocationManager
+    @StateObject var soundsManager : SoundsManager
+    
+    @Binding var myTeamID : Int
     
     var body: some View {
         HStack {
@@ -22,6 +28,13 @@ struct NavButtonsView: View {
                 apiManager.showSettingsPage = true
             } label: {
                 Image(systemName: "gearshape")
+//                let id = settingsManager.settingsDict["faveTeamID"] as? Int
+//                let team = Team.teamData.first(where: { $0.teamID == id })
+//                
+//                Image(uiImage: team?.logo ?? Team.teamData[30].logo)
+//                    .resizable()
+//                    .scaledToFill()
+//                    .frame(width: 25, height: 25)
             }
         }
         .sheet(isPresented: $apiManager.showComparePage) {
@@ -29,11 +42,11 @@ struct NavButtonsView: View {
                 .presentationBackgroundInteraction(.enabled)
         }
         .sheet(isPresented: $apiManager.showSettingsPage) {
-            SettingsView()
+            SettingsView(settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager, myTeamID: $myTeamID)
         }
     }
 }
 
 #Preview {
-    NavButtonsView(apiManager: DataManager())
+    NavButtonsView(apiManager: DataManager(), settingsManager: SettingsManager(), locationManager: LocationManager(), soundsManager: SoundsManager(), myTeamID: .constant(Team.teamData[30].teamID))
 }

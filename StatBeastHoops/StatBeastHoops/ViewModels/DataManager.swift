@@ -38,6 +38,7 @@ class DataManager : ObservableObject {
         seasons.reverse()
     }
     
+    // Moved to HomeViewModel
     @MainActor
     func getTodaysGames() async -> [Game] {
         var games = [Game]()
@@ -537,6 +538,7 @@ class DataManager : ObservableObject {
         }
     }
     
+    // TeamsViewModel
     @MainActor
     func getTeams() async -> [Team] {
         var teams = Team.teamData
@@ -614,6 +616,7 @@ class DataManager : ObservableObject {
         return teams
     }
     
+    // TeamDetailViewModel
     func getTeamRoster(teamID: String) async -> [Player] {
 //        teamRoster.removeAll()
         var roster = [Player]()

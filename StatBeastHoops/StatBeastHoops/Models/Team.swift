@@ -50,6 +50,9 @@ struct Team {
         return "\(str)\(division) Division"
     }
     
+    var thumbnail : UIImage {
+        return logo.scale(newWidth: 40).withRenderingMode(.alwaysOriginal)
+    }
 //    var priColor : UIColor {
 //        var pc = UIColor(.accentColor)
 //        
@@ -137,4 +140,23 @@ extension Team {
 //        UIColor(red: <#T##CGFloat#>, green: <#T##CGFloat#>, blue: <#T##CGFloat#>, alpha: 1)
 //        UIColor(red: <#T##CGFloat#>, green: <#T##CGFloat#>, blue: <#T##CGFloat#>, alpha: 1)
 //    ]
+}
+
+extension UIImage {
+//    .scale(newWidth: 640)
+    func scale(newWidth: CGFloat) -> UIImage {
+        guard self.size.width != newWidth else{return self}
+        
+        let scaleFactor = newWidth / self.size.width
+        
+        let newHeight = self.size.height * scaleFactor
+        let newSize = CGSize(width: newWidth, height: newHeight)
+        
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
+        self.draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+        
+        let newImage: UIImage? = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext()
+        return newImage ?? self
+    }
 }

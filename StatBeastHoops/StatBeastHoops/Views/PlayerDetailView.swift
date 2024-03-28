@@ -112,41 +112,41 @@ struct PlayerDetailView: View {
                     Divider().frame(maxWidth: 1).overlay(Color(pc)).padding(.vertical, -8)
                     
                     VStack {
-                        Text("\(p.draft)").font(.caption).bold()
-                        Text("Draft").font(.caption2)
-                    }.frame(maxWidth: .infinity).foregroundStyle(Color(pc))
+                        Text("\(p.draft)").font(.caption).bold().foregroundStyle(Color(pc))
+                        Text("Draft").font(.caption2).foregroundStyle(.tertiary)
+                    }.frame(maxWidth: .infinity)
                 }.frame(maxHeight: 15).padding(.top).padding(.bottom, 4)
                 
                 Divider().frame(maxHeight: 1).overlay(Color(pc)).padding(.horizontal, 4)
                 
                 HStack(spacing: 0) {
                     VStack {
-                        Text("\(p.birthDate ?? "-")").font(.caption).bold()
-                        Text("Birthday").font(.caption2)
-                    }.frame(maxWidth: .infinity).foregroundStyle(Color(pc))
+                        Text("\(p.birthDate ?? "-")").font(.caption).bold().foregroundStyle(Color(pc))
+                        Text("Birthday").font(.caption2).foregroundStyle(.tertiary)
+                    }.frame(maxWidth: .infinity)
                     
                     Divider().frame(maxWidth: 1).overlay(Color(pc)).padding(.vertical, -8)
                     
                     VStack {
-                        Text("\(p.country ?? "-1")").font(.caption).bold()
-                        Text("Country").font(.caption2)
-                    }.frame(maxWidth: .infinity).foregroundStyle(Color(pc))
+                        Text("\(p.country ?? "-1")").font(.caption).bold().foregroundStyle(Color(pc))
+                        Text("Country").font(.caption2).foregroundStyle(.tertiary)
+                    }.frame(maxWidth: .infinity)
                 }.frame(maxHeight: 15).padding(.vertical, 4)
                 
                 Divider().frame(maxHeight: 1).overlay(Color(pc)).padding(.horizontal, 4)
                 
                 HStack(spacing: 0) {
                     VStack {
-                        Text("\(p.college ?? "-")").font(.caption).bold()
-                        Text("School").font(.caption2)
-                    }.frame(maxWidth: .infinity).foregroundStyle(Color(pc))
+                        Text("\(p.college ?? "-")").font(.caption).bold().foregroundStyle(Color(pc))
+                        Text("School").font(.caption2).foregroundStyle(.tertiary)
+                    }.frame(maxWidth: .infinity)
                     
                     Divider().frame(maxWidth: 1).overlay(Color(pc)).padding(.vertical, -8)
                     
                     VStack {
-                        Text("\(p.exp ?? "-1")").font(.caption).bold()
-                        Text("Experience").font(.caption2)
-                    }.frame(maxWidth: .infinity).foregroundStyle(Color(pc))
+                        Text("\(p.exp ?? "-1")").font(.caption).bold().foregroundStyle(Color(pc))
+                        Text("Experience").font(.caption2).foregroundStyle(.tertiary)
+                    }.frame(maxWidth: .infinity)
                 }.frame(maxHeight: 15).padding(.vertical, 4)
 
                 Divider().frame(maxHeight: 2).overlay(Color(pc))

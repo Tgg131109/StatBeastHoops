@@ -9,6 +9,8 @@ import Foundation
 
 class SettingsManager: ObservableObject {
     @Published var settingsDict : [String : Any] = ["userName" : "StatGod87", "faveTeamID" : 15, "soundPref": false]
+    @Published var favTeam : Team = Team.teamData[30]
+    @Published var favTeamID : Int = Team.teamData[30].teamID
     
     // Keys used to write to UserDefaults
     private let saveSettingsKey = "UserSettings"

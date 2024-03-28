@@ -8,7 +8,6 @@
 import Foundation
 import SwiftUI
 
-
 class TestFile : ObservableObject {
     
     func changeApiKey() {

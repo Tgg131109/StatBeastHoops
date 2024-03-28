@@ -9,10 +9,16 @@ import SwiftUI
 
 struct ContentView: View {
     var apiManager = DataManager()
+    var favoritesManager = FavoritesManager()
+    var settingsManager = SettingsManager()
+    var locationManager = LocationManager()
+    var soundsManager = SoundsManager()
+    
+    @State private var faveTeamID : Int = Team.teamData[30].teamID
     
     var body: some View {
         TabView {
-            HomeView(apiManager: apiManager)
+            HomeView(apiManager: apiManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager, myTeamID: $faveTeamID)
                 .tabItem {
                     Label("Home", systemImage: "list.dash")
                 }
@@ -34,9 +40,18 @@ struct ContentView: View {
             
             TeamsView(apiManager: apiManager)
                 .tabItem {
-                    Label("Teams", systemImage: "basketball")
+                    Label {
+                        Text("Teams")
+                    } icon: {
+                        TabBarLogoView(myTeamID: $faveTeamID)
+                    }
                 }
-        }.overlay(SplashView(apiManager: apiManager).onDisappear{print("gone")})
+        }
+        .overlay(SplashView(apiManager: apiManager).onDisappear{print("gone")})
+        .onAppear(perform: {
+            print("tabbar")
+            faveTeamID = settingsManager.settingsDict["faveTeamID"] as? Int ?? Team.teamData[30].teamID
+        })
     }
 }
 
