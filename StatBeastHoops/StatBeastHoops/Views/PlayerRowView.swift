@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PlayerRowView: View {
-    @StateObject var apiManager : DataManager
+    @StateObject var playerDataManager : PlayerDataManager
     
 //    @State private var showComparePage: Bool = false
 //    @State private var showCompareOptions: Bool = false
@@ -17,7 +17,7 @@ struct PlayerRowView: View {
     
     var player : Player
     var rowType : String
-    
+    var criterion: String = "PTS"
 //    var p1 : Player? = nil
 //    var p2 : Player? = nil
     
@@ -29,7 +29,7 @@ struct PlayerRowView: View {
         
         ZStack(alignment: .center) {
             NavigationLink {
-                PlayerDetailView(apiManager: apiManager, p: player)
+                PlayerDetailView(playerDataManager: playerDataManager, p: player)
             } label: {
                 ZStack(alignment: .center) {
                     Text(rn).font(.system(size: 60)).fontWeight(.black).foregroundStyle(.tertiary).frame(maxWidth: .infinity, alignment: .leading)
@@ -37,16 +37,22 @@ struct PlayerRowView: View {
                     HStack {
                         VStack {
                             Spacer()
-                            AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
-                                image
-                                    .resizable()
-                                    .scaledToFit()
-                            } placeholder: {
-                                Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
+                            
+                            if let pic = playerDataManager.playerHeadshots.first(where: { $0.playerID == player.playerID })?.pic {
+                                pic.resizable().aspectRatio(contentMode: .fill).frame(width: 80, height: 60, alignment: .bottom)
+                                    .padding(.trailing, -20)
+                            } else {
+                                headshotView
                             }
-                            .frame(width: 80, height: 60, alignment: .bottom)
-                            .padding(.trailing, -20)
-                            //                        .padding(.bottom, -25)
+//                            AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
+//                                image
+//                                    .resizable()
+//                                    .scaledToFit()
+//                            } placeholder: {
+//                                Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
+//                            }
+//                            .frame(width: 80, height: 60, alignment: .bottom)
+//                            .padding(.trailing, -20)
                         }
                         
                         let pos = player.position ?? "-"
@@ -63,6 +69,10 @@ struct PlayerRowView: View {
                             Text(player.firstName).padding(.bottom, -10)
                             Text(player.lastName).font(.title2).minimumScaleFactor(0.1).bold()
                             HStack {
+                                if rowType == "leaders" {
+                                    Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill).frame(width: 25)
+                                }
+                                
                                 HStack(alignment: .bottom) {
                                     Text(pos)
                                     Divider().frame(maxWidth: 2).overlay(.background).padding(.vertical, -10)
@@ -76,13 +86,13 @@ struct PlayerRowView: View {
                                 )
                                 
                                 Button {
-                                    apiManager.sp = player
+                                    playerDataManager.sp = player
                                     
-                                    if !apiManager.showComparePage {
+                                    if !playerDataManager.showComparePage {
                                         print("show")
-                                        apiManager.showComparePage.toggle()
+                                        playerDataManager.showComparePage.toggle()
                                     } else {
-                                        print(apiManager.sp?.id)
+                                        print(playerDataManager.sp?.id)
                                     }
                                 } label: {
 //                                    Image(systemName: "figure.basketball")
@@ -98,10 +108,9 @@ struct PlayerRowView: View {
                         
                         VStack(alignment: .trailing) {
                             if rowType == "leaders" {
-                                if let s = player.pts {
-                                    Text(String(format: "%.1f", s)).font(.title2).fontWeight(.bold)
-                                }
-                                Text("PPG").font(.caption2)
+                                Text(getStatStr()).font(.title2).fontWeight(.bold)
+                                Text("\(criterion)").font(.caption2)
+                                Text("per game").font(.system(size: 8)).foregroundStyle(.secondary)
                             } else {
                                 HStack {
                                     VStack {
@@ -146,8 +155,80 @@ struct PlayerRowView: View {
 //        
 //        return team
 //    }
+    
+    var headshotView: some View {
+        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { phase in
+            switch phase {
+            case .empty:
+                Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
+            case .success(let image):
+                let _ = DispatchQueue.main.async {
+                    playerDataManager.playerHeadshots.append(PlayerHeadshot(playerID: player.playerID, pic: image))
+                }
+                
+                image.resizable().scaledToFit()
+            case .failure:
+                Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
+            @unknown default:
+                Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
+            }
+        }
+        .frame(width: 80, height: 60, alignment: .bottom)
+        .padding(.trailing, -20)
+    }
+    
+    func getStatStr() -> String {
+        var valueStr = "-1"
+//        var statStr = ""
+        
+        switch criterion {
+        case "GP":
+            valueStr = String(format: "%.1f", player.gp ?? -1)
+        case "MIN":
+            valueStr = String(format: "%.1f", player.min ?? -1)
+        case "FGM":
+            valueStr = String(format: "%.1f", player.fgm ?? -1)
+        case "FGA":
+            valueStr = String(format: "%.1f", player.fga ?? -1)
+        case "FG_PCT":
+            valueStr = String(format: "%.1f", player.fg_pct ?? -1)
+        case "FG3M":
+            valueStr = String(format: "%.1f", player.fg3m ?? -1)
+        case "FG3A":
+            valueStr = String(format: "%.1f", player.fg3a ?? -1)
+        case "FG3_PCT":
+            valueStr = String(format: "%.1f", player.fg3_pct ?? -1)
+        case "FTM":
+            valueStr = String(format: "%.1f", player.ftm ?? -1)
+        case "FTA":
+            valueStr = String(format: "%.1f", player.fta ?? -1)
+        case "FT_PCT":
+            valueStr = String(format: "%.1f", player.ft_pct ?? -1)
+        case "OREB":
+            valueStr = String(format: "%.1f", player.oreb ?? -1)
+        case "DREB":
+            valueStr = String(format: "%.1f", player.dreb ?? -1)
+        case "REB":
+            valueStr = String(format: "%.1f", player.reb ?? -1)
+        case "AST":
+            valueStr = String(format: "%.1f", player.ast ?? -1)
+        case "STL":
+            valueStr = String(format: "%.1f", player.stl ?? -1)
+        case "BLK":
+            valueStr = String(format: "%.1f", player.blk ?? -1)
+        case "TOV":
+            valueStr = String(format: "%.1f", player.tov ?? -1)
+        case "EFF":
+            valueStr = String(format: "%.1f", player.eff ?? -1)
+        default:
+            valueStr = String(format: "%.1f", player.pts ?? -1)
+        }
+        
+        return valueStr
+    }
 }
 
+
 #Preview {
-    PlayerRowView(apiManager: DataManager(), player: Player.demoPlayer, rowType: "players")
+    PlayerRowView(playerDataManager: PlayerDataManager(), player: Player.demoPlayer, rowType: "leaders")
 }

@@ -231,7 +231,8 @@ struct CompareView: View {
         })
     }
     
-    @ViewBuilder private var compareOverlay: some View {
+    @ViewBuilder
+    private var compareOverlay: some View {
         if showOverlay {
             VStack {
                 Text("Set Matchup").font(.body).bold().padding(.vertical, 20)

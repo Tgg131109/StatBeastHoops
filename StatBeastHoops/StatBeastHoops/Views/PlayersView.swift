@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PlayersView: View {
-    @StateObject var apiManager : DataManager
+    @StateObject var playerDataManager : PlayerDataManager
     
     @State private var searchText = ""
     @State private var searchScope = "Current"
@@ -46,7 +46,7 @@ struct PlayersView: View {
                     }) {
                         ForEach(searchResults, id: \.playerID) { player in
                             if searchText.isEmpty {
-                                PlayerRowView(apiManager: apiManager, player: player, rowType: searchText.isEmpty ? "leaders" : "players")
+                                PlayerRowView(playerDataManager: playerDataManager, player: player, rowType: searchText.isEmpty ? "leaders" : "players")
                             } else {
                                 Text("\(player.firstName) \(player.lastName)")
                             }
@@ -56,10 +56,9 @@ struct PlayersView: View {
                     .navigationTitle("Players")
                     .toolbarTitleDisplayMode(.inline)
                     .onAppear(perform: {   Task{
-                        print("appear")
-                        players = apiManager.allPlayers
-                        leaders = await apiManager.getLeaders()
-                        criteria = apiManager.statCriteria
+                        leaders = playerDataManager.leaders
+                        players = playerDataManager.allPlayers
+                        criteria = playerDataManager.statCriteria
                     } })
                 
                 Text("\(searchResults.count) players found").italic().font(.caption)
@@ -78,5 +77,5 @@ struct PlayersView: View {
 }
 
 #Preview {
-    PlayersView(apiManager: DataManager())
+    PlayersView(playerDataManager: PlayerDataManager())
 }

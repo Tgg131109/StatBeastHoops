@@ -19,7 +19,7 @@ struct Team {
     var division: String
     var logo: UIImage
     var priColor: UIColor
-    
+    var roster : [Player]? = []
     var wins: Int? = 0
     var loss: Int? = 0
     var divRank: Int? = 0
@@ -53,6 +53,10 @@ struct Team {
     var thumbnail : UIImage {
         return logo.scale(newWidth: 40).withRenderingMode(.alwaysOriginal)
     }
+    
+//    var roster : [Player] {
+//        return TeamDataManager().teamp
+//    }
 //    var priColor : UIColor {
 //        var pc = UIColor(.accentColor)
 //        
@@ -69,11 +73,158 @@ struct Team {
 //        
 //        return pc
 //    }
+    
+
 }
+//
+//struct Teams: AsyncSequence {
+//    typealias AsyncIterator = TeamAsyncIterator
+//    typealias Element = [Player]
+//    
+//    let teamIDs: [String]
+//    
+//    func makeAsyncIterator() -> TeamAsyncIterator {
+////        var teamIDs = [String]()
+//
+////        for team in Team.teamData {
+////            teamIDs.append("\(team.teamID)")
+////        }
+//        
+//        TeamAsyncIterator(teamIDs: teamIDs)
+//    }
+//}
+//
+//struct TeamAsyncIterator: AsyncIteratorProtocol {
+//    typealias Element = [Player]
+//    
+////    let teamID: Int
+////    let name: String
+//    let teamIDs: [String]
+//    
+//    fileprivate var index: Int = 0
+//    
+//    mutating func next() async throws -> [Player]? {
+//        print("\(index + 1) of \(teamIDs.count)")
+//        var roster = [Player]()
+////        let teamID = teamIDs[index]
+//        
+////        if teamID == "31" {
+////            index += 1
+////            return []
+////        }
+//        
+//        // Validate URL.
+//        guard let validURL = URL(string: "https://stats.nba.com/stats/commonteamroster?LeagueID=&Season=2023-24&TeamID=\(teamIDs[index])"), index < teamIDs.count - 2 else {
+//            if index == 29 {
+//                print("done")
+//                index += 1
+//                return []
+//            } else {
+//                fatalError("Invalid URL")
+//            }
+//        }
+//        
+//        var urlRequest = URLRequest(url: validURL)
+//        urlRequest.setValue("https://stats.nba.com",forHTTPHeaderField: "Referer")
+//        //        urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
+//        
+//        index += 1
+//        
+//        do {
+//            let (validData, response) = try await URLSession.shared.data(for: urlRequest)
+////            let (validData, response) = try await URLSession.shared.data
+//            
+//            guard let httpResponse = response as? HTTPURLResponse,
+//                  httpResponse.statusCode == 200 // 200 = OK
+//            else {
+//                DispatchQueue.main.async {
+//                    // Present alert on main thread if there is an error with the URL.
+//                }
+//                
+//                print("JSON object creation failed.")
+//                return []
+//            }
+//            
+//            // Create json Object from downloaded data above and cast as [String: Any].
+//            if let jsonObj = try JSONSerialization.jsonObject(with: validData, options: .mutableContainers) as? [String: Any] {
+//                guard let data = jsonObj["resultSets"] as? [[String: Any]]
+//                else {
+//                    print("This isn't working")
+//                    return []
+//                }
+//                
+//                for i in data.indices {
+//                    if data[i]["name"] as! String == "CommonTeamRoster" {
+//                        guard let headers = data[i]["headers"] as? [Any],
+//                              let players = data[i]["rowSet"] as? [[Any]]
+//                        else {
+//                            print("This isn't working")
+//                            return []
+//                        }
+//                        
+//                        //                        print(players)
+//                        
+//                        for player in players {
+//                            var x = 0
+//                            var p = [String : Any]()
+//                            
+//                            for header in headers {
+//                                //                                print("\(header) : \(player[x])")
+//                                p[header as! String] = player[x]
+//                                x += 1
+//                            }
+//                            
+//                            let nameFormatter = PersonNameComponentsFormatter()
+//                            let name = p["PLAYER"]
+//                            var fname = ""
+//                            var lname = ""
+//                            
+//                            if let nameComps  = nameFormatter.personNameComponents(from: name as! String) {
+//                                fname = nameComps.givenName ?? p["PLAYER"] as! String
+//                                lname = nameComps.familyName ?? ""
+//                            }
+//                            //                            print(p["NUM"])
+//                            roster.append(Player(playerID: p["PLAYER_ID"] as! Int, firstName: fname, lastName: lname, nickName: p["NICKNAME"] as? String, rank: 0, teamID: p["TeamID"] as! Int, jersey: p["NUM"] as? String, position: p["POSITION"] as? String, height: p["HEIGHT"] as? String, weight: p["WEIGHT"] as? String, birthDate: p["BIRTH_DATE"] as? String, exp: p["EXP"] as? String, college: p["SCHOOL"] as? String, howAcquired: p["HOW_ACQUIRED"] as? String, age: p["AGE"] as? Int))
+//                        }
+//                        
+////                        teamPlayers[team.teamID] = roster
+//                        
+//                    } else if data[i]["name"] as! String == "Coaches" {
+//                        guard let headers = data[i]["headers"] as? [Any],
+//                              let coaches = data[i]["rowSet"] as? [[Any]]
+//                        else {
+//                            print("This isn't working")
+//                            return []
+//                        }
+//                        
+//                        //                        print(coaches)
+//                        
+//                        for coach in coaches {
+//                            var x = 0
+//                            var c = [String : Any]()
+//                            
+//                            for header in headers {
+//                                //                                print("\(header) : \(coach[x])")
+//                                c[header as! String] = coach[x]
+//                                x += 1
+//                            }
+//                            
+//                            //                            roster.append(Player(playerID: p["PLAYER_ID"] as! Int, firstName: p["PLAYER"] as! String, lastName: "", nickName: p["NICKNAME"] as? String, rank: 0, teamID: p["TEAM_ID"] as! Int, number: p["JERSEY_NUMBER"] as? Int, position: p["POSITION"] as? String, height: p["HEIGHT"] as? String, weight: p["WEIGHT"] as? Int, birthDate: p["BIRTH_DATE"] as? String, exp: p["EXP"] as? String, college: p["SCHOOL"] as? String, howAcquired: p["HOW_ACQUIRED"] as? String, age: p["AGE"] as? Double))
+//                        }
+//                    }
+//                }
+//            }
+//        } catch {
+//            return []
+//        }
+//        
+//        return roster
+//    }
+//}
 
 // These are prepopulated to minimize API calls since the teams are not going to change.
 extension Team {
-    static let teamData : [Team] = [
+    static var teamData : [Team] = [
         Team(teamID: 1610612737, abbr: "ATL", homeTown: "Atlanta", teamName: "Hawks", fullName: "Atlanta Hawks", conference: "East", division: "Southeast", logo: UIImage(named: "hawks")!, priColor: UIColor(red: 200/255, green: 16/255, blue: 16/255, alpha: 1)),
         Team(teamID: 1610612738, abbr: "BOS", homeTown: "Boston", teamName: "Celtics", fullName: "Boston Celtics", conference: "East", division: "Atlantic", logo: UIImage(named: "celtics")!, priColor: UIColor(red: 0, green: 122/255, blue: 51/255, alpha: 1)),
         Team(teamID: 1610612751, abbr: "BKN", homeTown: "Brooklyn", teamName: "Nets", fullName: "Brooklyn Nets", conference: "East", division: "Atlantic", logo: UIImage(named: "nets")!, priColor: UIColor(red: 0, green: 0, blue: 0, alpha: 1)),

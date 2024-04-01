@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject var apiManager : DataManager
+    @StateObject var playerDataManager : PlayerDataManager
     @StateObject var settingsManager : SettingsManager
     @StateObject var locationManager : LocationManager
     @StateObject var soundsManager : SoundsManager
@@ -42,7 +43,7 @@ struct HomeView: View {
                 List {
                     Section {
                         ForEach(leaders, id: \.playerID) { player in
-                            PlayerRowView(apiManager: apiManager, player: player, rowType: "leaders")
+                            PlayerRowView(playerDataManager: playerDataManager, player: player, rowType: "leaders", criterion: criterion)
                         }
                     } header: {
                         HStack {
@@ -52,17 +53,24 @@ struct HomeView: View {
                                 ForEach(criteria, id: \.self) {
                                     Text($0)
                                 }
-                            }.pickerStyle(.menu).padding(.leading, -15)
+                            }
+                            .pickerStyle(.menu).padding(.leading, -15)
+                            .onChange(of: criterion) { Task{
+//                                leaders = await apiManager.getLeaders(cat: criterion)
+                                await playerDataManager.getLeaders(cat: criterion)
+                                leaders = playerDataManager.leaders
+                            } }
                         }
                     }
                 }
                 .listStyle(.plain)
                 .scrollIndicators(.hidden)
                 .onAppear(perform: {   Task{
+                    leaders = playerDataManager.leaders
                     games = await apiManager.getTodaysGames()
-                    leaders = await apiManager.getLeaders()
-                    criteria = apiManager.statCriteria
-                    players = apiManager.allPlayers
+                    criteria = playerDataManager.statCriteria
+                    players = playerDataManager.allPlayers
+//                    leaders = await apiManager.getLeaders(cat: criterion)
                 } })
                 
                 Divider()
@@ -143,7 +151,8 @@ struct HomeView: View {
 //        }
     }
     
-    @ViewBuilder private var searchOverlay: some View {
+    @ViewBuilder
+    private var searchOverlay: some View {
         if !searchText.isEmpty {
             List {
                 Section(header: HStack {
@@ -154,7 +163,7 @@ struct HomeView: View {
 //                        let team = Team.teamData.first(where: { $0.teamID == player.teamID})
                         
                         NavigationLink {
-                            PlayerDetailView(apiManager: apiManager, p: player)
+                            PlayerDetailView(playerDataManager: playerDataManager, p: player)
                         } label: {
                             HStack {
                                 AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
@@ -177,7 +186,7 @@ struct HomeView: View {
                 }) {
                     ForEach(teamResults, id: \.teamID) { team in
                         NavigationLink {
-                            TeamDetailView(apiManager: apiManager, team: team)
+                            TeamDetailView(apiManager: apiManager, playerDataManager: playerDataManager, team: team)
                         } label: {
                             HStack {
                                 Image(uiImage: team.logo).resizable().aspectRatio(contentMode: .fill).frame(width: 40, height: 30)
@@ -193,5 +202,5 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView(apiManager: DataManager(), settingsManager: SettingsManager(), locationManager: LocationManager(), soundsManager: SoundsManager(), myTeamID: .constant(Team.teamData[30].teamID))
+    HomeView(apiManager: DataManager(), playerDataManager: PlayerDataManager(), settingsManager: SettingsManager(), locationManager: LocationManager(), soundsManager: SoundsManager(), myTeamID: .constant(Team.teamData[30].teamID))
 }

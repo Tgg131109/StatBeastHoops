@@ -12,6 +12,9 @@
 		3ACB6E402BA4DA8C0030C24A /* PlayerRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ACB6E3F2BA4DA8C0030C24A /* PlayerRowView.swift */; };
 		3ACB6E422BA658A30030C24A /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ACB6E412BA658A30030C24A /* SplashView.swift */; };
 		3ACB6E442BAA46230030C24A /* NavButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ACB6E432BAA46230030C24A /* NavButtonsView.swift */; };
+		3AD2E2DE2BB7251D00D72667 /* SignInUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD2E2DD2BB7251D00D72667 /* SignInUpView.swift */; };
+		3AD2E2E22BB9AD2600D72667 /* PlayerDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD2E2E12BB9AD2600D72667 /* PlayerDataManager.swift */; };
+		3AD2E2E42BB9D80500D72667 /* TeamDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD2E2E32BB9D80500D72667 /* TeamDataManager.swift */; };
 		3AD88D7D2BAB1F3B0040012E /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD88D7C2BAB1F3A0040012E /* HomeViewModel.swift */; };
 		3AD88D7F2BAB20080040012E /* PlayerDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD88D7E2BAB20080040012E /* PlayerDetailViewModel.swift */; };
 		3AD88D862BB4A43B0040012E /* player_select.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 3AD88D802BB4A43A0040012E /* player_select.mp3 */; };
@@ -76,6 +79,9 @@
 		3ACB6E3F2BA4DA8C0030C24A /* PlayerRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerRowView.swift; sourceTree = "<group>"; };
 		3ACB6E412BA658A30030C24A /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		3ACB6E432BAA46230030C24A /* NavButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavButtonsView.swift; sourceTree = "<group>"; };
+		3AD2E2DD2BB7251D00D72667 /* SignInUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInUpView.swift; sourceTree = "<group>"; };
+		3AD2E2E12BB9AD2600D72667 /* PlayerDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDataManager.swift; sourceTree = "<group>"; };
+		3AD2E2E32BB9D80500D72667 /* TeamDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamDataManager.swift; sourceTree = "<group>"; };
 		3AD88D7C2BAB1F3A0040012E /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		3AD88D7E2BAB20080040012E /* PlayerDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailViewModel.swift; sourceTree = "<group>"; };
 		3AD88D802BB4A43A0040012E /* player_select.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = player_select.mp3; sourceTree = "<group>"; };
@@ -233,6 +239,8 @@
 				3AD88D7C2BAB1F3A0040012E /* HomeViewModel.swift */,
 				3AD88D7E2BAB20080040012E /* PlayerDetailViewModel.swift */,
 				3AF765592B97C0BA008C2FA3 /* DataManager.swift */,
+				3AD2E2E12BB9AD2600D72667 /* PlayerDataManager.swift */,
+				3AD2E2E32BB9D80500D72667 /* TeamDataManager.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -254,8 +262,8 @@
 		3AF765342B966A59008C2FA3 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				3AF765092B966108008C2FA3 /* ContentView.swift */,
 				3ACB6E412BA658A30030C24A /* SplashView.swift */,
+				3AF765092B966108008C2FA3 /* ContentView.swift */,
 				3AF765352B966ADE008C2FA3 /* HomeView.swift */,
 				3AF765372B966B0A008C2FA3 /* CompareView.swift */,
 				3AF765392B966B3A008C2FA3 /* FavoritesView.swift */,
@@ -268,6 +276,7 @@
 				3AF7653B2B966B6E008C2FA3 /* SettingsView.swift */,
 				3ACB6E432BAA46230030C24A /* NavButtonsView.swift */,
 				3AD88D8C2BB503F20040012E /* TabBarLogoView.swift */,
+				3AD2E2DD2BB7251D00D72667 /* SignInUpView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -439,8 +448,11 @@
 				3AF765582B97A3DC008C2FA3 /* TestFile.swift in Sources */,
 				3AF765382B966B0A008C2FA3 /* CompareView.swift in Sources */,
 				3AF765492B976271008C2FA3 /* AlertManager.swift in Sources */,
+				3AD2E2E22BB9AD2600D72667 /* PlayerDataManager.swift in Sources */,
 				3AD88D8D2BB503F20040012E /* TabBarLogoView.swift in Sources */,
 				3AF765462B976271008C2FA3 /* FavoritesManager.swift in Sources */,
+				3AD2E2E42BB9D80500D72667 /* TeamDataManager.swift in Sources */,
+				3AD2E2DE2BB7251D00D72667 /* SignInUpView.swift in Sources */,
 				3AF765482B976271008C2FA3 /* SettingsManager.swift in Sources */,
 				3ACB6E3E2BA46DFC0030C24A /* TeamRowView.swift in Sources */,
 				3ACB6E422BA658A30030C24A /* SplashView.swift in Sources */,

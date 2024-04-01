@@ -6,8 +6,10 @@
 //
 
 import Foundation
+import SwiftUI
 
-struct pStat : Decodable, Encodable {
+struct PlayerStats : Decodable, Encodable {
+    var playerID: Int
     var age: Int? = -1
     var gp: Int? = -1
     var gs: Int? = -1
@@ -30,6 +32,7 @@ struct pStat : Decodable, Encodable {
     var tov: Int? = -1
     var pf: Int? = -1
     var pts: Int? = -1
+    var eff: Int? = -1
 }
 
 struct PlayerStat {
@@ -65,3 +68,8 @@ struct Stat: Identifiable {
     var id: Int // = game number to get data sets together.
     var value: String
 }
+
+//struct PlayerHeadshot {
+//    var playerID: Int
+//    var pic: Image? = nil
+//}

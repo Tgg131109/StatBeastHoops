@@ -9,6 +9,8 @@ import SwiftUI
 
 struct TeamsView: View {
     @StateObject var apiManager : DataManager
+    @StateObject var playerDataManager : PlayerDataManager
+    
     @State private var searchText = ""
     @State var teams = [Team]()
     
@@ -18,7 +20,7 @@ struct TeamsView: View {
                 Section(header: HStack { Text("ATLANTIC"); Spacer(); Text("W      L  ").padding(.trailing) }) {
                     ForEach(teams, id: \.teamID) { team in
                         if !(team.abbr == "NBA") && team.division == "Atlantic" {
-                            TeamRowView(apiManager: apiManager, team: team)
+                            TeamRowView(apiManager: apiManager, playerDataManager: playerDataManager, team: team)
                         }
                     }
                 }
@@ -26,7 +28,7 @@ struct TeamsView: View {
                 Section(header: HStack { Text("CENTRAL"); Spacer(); Text("W      L  ").padding(.trailing) }) {
                     ForEach(teams, id: \.teamID) { team in
                         if !(team.abbr == "NBA") && team.division == "Central" {
-                            TeamRowView(apiManager: apiManager, team: team)
+                            TeamRowView(apiManager: apiManager, playerDataManager: playerDataManager, team: team)
                         }
                     }
                 }
@@ -34,7 +36,7 @@ struct TeamsView: View {
                 Section(header: HStack { Text("SOUTHEAST"); Spacer(); Text("W      L  ").padding(.trailing) }) {
                     ForEach(teams, id: \.teamID) { team in
                         if !(team.abbr == "NBA") && team.division == "Southeast" {
-                            TeamRowView(apiManager: apiManager, team: team)
+                            TeamRowView(apiManager: apiManager, playerDataManager: playerDataManager, team: team)
                         }
                     }
                 }
@@ -42,7 +44,7 @@ struct TeamsView: View {
                 Section(header: HStack { Text("NORTHWEST"); Spacer(); Text("W      L  ").padding(.trailing) }) {
                     ForEach(teams, id: \.teamID) { team in
                         if !(team.abbr == "NBA") && team.division == "Northwest" {
-                            TeamRowView(apiManager: apiManager, team: team)
+                            TeamRowView(apiManager: apiManager, playerDataManager: playerDataManager, team: team)
                         }
                     }
                 }
@@ -50,7 +52,7 @@ struct TeamsView: View {
                 Section(header: HStack { Text("PACIFIC"); Spacer(); Text("W      L  ").padding(.trailing) }) {
                     ForEach(teams, id: \.teamID) { team in
                         if !(team.abbr == "NBA") && team.division == "Pacific" {
-                            TeamRowView(apiManager: apiManager, team: team)
+                            TeamRowView(apiManager: apiManager, playerDataManager: playerDataManager, team: team)
                         }
                     }
                 }
@@ -58,7 +60,7 @@ struct TeamsView: View {
                 Section(header: HStack { Text("SOUTHWEST"); Spacer(); Text("W      L  ").padding(.trailing) }) {
                     ForEach(teams, id: \.teamID) { team in
                         if !(team.abbr == "NBA") && team.division == "Southwest" {
-                            TeamRowView(apiManager: apiManager, team: team)
+                            TeamRowView(apiManager: apiManager, playerDataManager: playerDataManager, team: team)
                         }
                     }
                 }
@@ -73,5 +75,5 @@ struct TeamsView: View {
 }
 
 #Preview {
-    TeamsView(apiManager: DataManager())
+    TeamsView(apiManager: DataManager(), playerDataManager: PlayerDataManager())
 }

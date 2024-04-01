@@ -9,12 +9,13 @@ import SwiftUI
 
 struct TeamRowView: View {
     @StateObject var apiManager : DataManager
+    @StateObject var playerDataManager : PlayerDataManager
     
     var team : Team
     
     var body: some View {
         NavigationLink {
-            TeamDetailView(apiManager: apiManager, team: team)
+            TeamDetailView(apiManager: apiManager, playerDataManager: playerDataManager, team: team)
         } label: {
             ZStack {
                 Image(uiImage: team.logo).resizable().rotationEffect(.degrees(-35)).aspectRatio(contentMode: .fill)
@@ -39,5 +40,5 @@ struct TeamRowView: View {
 }
 
 #Preview {
-    TeamRowView(apiManager: DataManager(), team: Team.teamData[15])
+    TeamRowView(apiManager: DataManager(), playerDataManager: PlayerDataManager(), team: Team.teamData[15])
 }

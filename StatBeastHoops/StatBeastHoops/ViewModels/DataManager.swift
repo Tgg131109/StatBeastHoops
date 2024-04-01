@@ -26,6 +26,8 @@ class DataManager : ObservableObject {
     @Published var currentDetent = PresentationDetent.height(400)
     @Published var showComparePage = false
     @Published var showSettingsPage = false
+    @Published var playerHeadshots = [PlayerHeadshot]()
+    @Published var playerStats = [PlayerStats]()
     
     let soundsManager = SoundsManager()
     
@@ -116,11 +118,11 @@ class DataManager : ObservableObject {
     }
     
     @MainActor
-    func getLeaders() async -> [Player] {
+    func getLeaders(cat: String) async -> [Player] {
         searchResults.removeAll()
         
         // Validate URL.
-        guard let validURL = URL(string: "https://stats.nba.com/stats/leagueLeaders?LeagueID=00&PerMode=PerGame&Scope=S&Season=2023-24&SeasonType=Regular%20Season&StatCategory=PTS")
+        guard let validURL = URL(string: "https://stats.nba.com/stats/leagueLeaders?LeagueID=00&PerMode=PerGame&Scope=S&Season=2023-24&SeasonType=Regular%20Season&StatCategory=\(cat)")
         else { fatalError("Invalid URL")}
         
         var urlRequest = URLRequest(url: validURL)
@@ -175,7 +177,7 @@ class DataManager : ObservableObject {
                         i += 1
                     }
                     
-//                    print(p["RANK"])
+//                    print(p["EFF"])
 //                    print(p)
                     
                     // Step through outer level data to get to relevant post data.
@@ -206,7 +208,21 @@ class DataManager : ObservableObject {
                         lname = nameComps.familyName ?? ""
                     }
                     
-                    self.searchResults.append(Player(playerID: p["PLAYER_ID"] as! Int, firstName: fname, lastName: lname, rank: p["RANK"] as? Int, teamID: p["TEAM_ID"] as! Int, gp: p["GP"] as? Double, min: p["MIN"] as? Double, fgm: p["FGM"] as? Double, fga: p["FGA"] as? Double, fg_pct: p["FG_PCT"] as? Double, fg3m: p["FG3M"] as? Double, fg3a: p["FG3A"] as? Double, fg3_pct: p["FG3_PCT"] as? Double, ftm: p["FTM"] as? Double, fta: p["FTA"] as? Double, ft_pct: p["FT_PCT"] as? Double, oreb: p["OREB"] as? Double, dreb: p["DREB"] as? Double, reb: p["REB"] as? Double, ast: p["AST"] as? Double, stl: p["STL"] as? Double, blk: p["BLK"] as? Double, tov: p["TOV"] as? Double, pts: p["PTS"] as? Double))
+                    let newPlayer = Player(playerID: p["PLAYER_ID"] as! Int, firstName: fname, lastName: lname, rank: p["RANK"] as? Int, teamID: p["TEAM_ID"] as! Int, gp: p["GP"] as? Double, min: p["MIN"] as? Double, fgm: p["FGM"] as? Double, fga: p["FGA"] as? Double, fg_pct: p["FG_PCT"] as? Double, fg3m: p["FG3M"] as? Double, fg3a: p["FG3A"] as? Double, fg3_pct: p["FG3_PCT"] as? Double, ftm: p["FTM"] as? Double, fta: p["FTA"] as? Double, ft_pct: p["FT_PCT"] as? Double, oreb: p["OREB"] as? Double, dreb: p["DREB"] as? Double, reb: p["REB"] as? Double, ast: p["AST"] as? Double, stl: p["STL"] as? Double, blk: p["BLK"] as? Double, tov: p["TOV"] as? Double, pts: p["PTS"] as? Double, eff: p["EFF"] as? Double)
+                    
+                    self.searchResults.append(newPlayer)
+                    
+                    if let pl = allPlayers.first(where: { $0.playerID == newPlayer.playerID }) {
+                        print("found in all players")
+                        if pl.age == -1 {
+//                            DispatchQueue.main.async {
+//                                <#code#>
+//                            }
+                            await getPlayerInfo(pID: newPlayer.playerID)
+                        }
+                    } else {
+                        await getPlayerInfo(pID: newPlayer.playerID)
+                    }
                 }
             }
         } catch {
@@ -253,7 +269,7 @@ class DataManager : ObservableObject {
         progress = 0.0
         
         // Validate URL.
-        guard let validURL = URL(string: "https://stats.nba.com/stats/playerindex?Active=&AllStar=&College=&Country=&DraftPick=&DraftRound=&DraftYear=&Height=&Historical=1&LeagueID=00&Season=2022-23&TeamID=0&Weight=")
+        guard let validURL = URL(string: "https://stats.nba.com/stats/playerindex?Active=&AllStar=&College=&Country=&DraftPick=&DraftRound=&DraftYear=&Height=&Historical=1&LeagueID=00&Season=2023-24&TeamID=0&Weight=")
 //        guard let validURL = URL(string: "https://stats.nba.com/stats/commonallplayers?IsOnlyCurrentSeason=0&LeagueID=00&Season=2023-24")
         else { fatalError("Invalid URL")}
         
@@ -437,6 +453,7 @@ class DataManager : ObservableObject {
 //        return allPlayers
     }
     
+    // Compare data
     @MainActor
     func getStatSets(pIDs: [String], criteria: String) async {
         // Validate URL.
@@ -714,5 +731,109 @@ class DataManager : ObservableObject {
         }
 //        task.resume()
         return roster
+    }
+    
+    // Player Info
+    @MainActor
+    func getPlayerInfo(pID: Int) async {
+//        teamRoster.removeAll()
+//        var roster = [Player]()
+        var player : Player
+        
+        // Validate URL.
+        guard let validURL = URL(string: "https://stats.nba.com/stats/commonplayerinfo?LeagueID=&PlayerID=\(pID)")
+        else { fatalError("Invalid URL")}
+        
+        var urlRequest = URLRequest(url: validURL)
+        urlRequest.setValue("https://stats.nba.com",forHTTPHeaderField: "Referer")
+//        urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
+
+        do {
+            let (validData, response) = try await URLSession.shared.data(for: urlRequest)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 // 200 = OK
+            else {
+                DispatchQueue.main.async {
+                    // Present alert on main thread if there is an error with the URL.
+                }
+                
+                print("JSON object creation failed.")
+                return
+            }
+            
+            // Create json Object from downloaded data above and cast as [String: Any].
+            if let jsonObj = try JSONSerialization.jsonObject(with: validData, options: .mutableContainers) as? [String: Any] {
+                guard let data = jsonObj["resultSets"] as? [[String: Any]]
+                else {
+                    print("This isn't working")
+                    return
+                }
+                
+                print(data)
+                
+//                for i in data.indices {
+//                    if data[i]["name"] as! String == "CommonTeamRoster" {
+//                        guard let headers = data[i]["headers"] as? [Any],
+//                              let players = data[i]["rowSet"] as? [[Any]]
+//                        else {
+//                            print("This isn't working")
+//                            return
+//                        }
+//                        
+////                        print(players)
+//
+//                        for player in players {
+//                            var x = 0
+//                            var p = [String : Any]()
+//                            
+//                            for header in headers {
+////                                print("\(header) : \(player[x])")
+//                                p[header as! String] = player[x]
+//                                x += 1
+//                            }
+//                            
+//                            let nameFormatter = PersonNameComponentsFormatter()
+//                            let name = p["PLAYER"]
+//                            var fname = ""
+//                            var lname = ""
+//                            
+//                            if let nameComps  = nameFormatter.personNameComponents(from: name as! String) {
+//                                fname = nameComps.givenName ?? p["PLAYER"] as! String
+//                                lname = nameComps.familyName ?? ""
+//                            }
+////                            print(p["NUM"])
+////                            roster.append(Player(playerID: p["PLAYER_ID"] as! Int, firstName: fname, lastName: lname, nickName: p["NICKNAME"] as? String, rank: 0, teamID: p["TeamID"] as! Int, jersey: p["NUM"] as? String, position: p["POSITION"] as? String, height: p["HEIGHT"] as? String, weight: p["WEIGHT"] as? String, birthDate: p["BIRTH_DATE"] as? String, exp: p["EXP"] as? String, college: p["SCHOOL"] as? String, howAcquired: p["HOW_ACQUIRED"] as? String, age: p["AGE"] as? Int))
+//                        }
+//                    } else if data[i]["name"] as! String == "Coaches" {
+//                        guard let headers = data[i]["headers"] as? [Any],
+//                              let coaches = data[i]["rowSet"] as? [[Any]]
+//                        else {
+//                            print("This isn't working")
+//                            return
+//                        }
+//                        
+////                        print(coaches)
+//
+//                        for coach in coaches {
+//                            var x = 0
+//                            var c = [String : Any]()
+//                            
+//                            for header in headers {
+////                                print("\(header) : \(coach[x])")
+//                                c[header as! String] = coach[x]
+//                                x += 1
+//                            }
+//                            
+////                            roster.append(Player(playerID: p["PLAYER_ID"] as! Int, firstName: p["PLAYER"] as! String, lastName: "", nickName: p["NICKNAME"] as? String, rank: 0, teamID: p["TEAM_ID"] as! Int, number: p["JERSEY_NUMBER"] as? Int, position: p["POSITION"] as? String, height: p["HEIGHT"] as? String, weight: p["WEIGHT"] as? Int, birthDate: p["BIRTH_DATE"] as? String, exp: p["EXP"] as? String, college: p["SCHOOL"] as? String, howAcquired: p["HOW_ACQUIRED"] as? String, age: p["AGE"] as? Double))
+//                        }
+//                    }
+//                }
+            }
+        } catch {
+            return
+        }
+//        task.resume()
+        return
     }
 }

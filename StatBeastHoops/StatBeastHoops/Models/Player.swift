@@ -6,6 +6,8 @@
 //
 
 import Foundation
+//import UIKit
+import SwiftUI
 
 struct Player: Decodable, Encodable, Identifiable {
     var id: Int { playerID }
@@ -51,6 +53,7 @@ struct Player: Decodable, Encodable, Identifiable {
     var tov: Double? = -1
     var pf: Double? = -1
     var pts: Double? = -1
+    var eff: Double? = -1
     
     var attr : String {
         let heightArr = height?.split(separator: "-")
@@ -65,6 +68,11 @@ struct Player: Decodable, Encodable, Identifiable {
     var team : Team {
         return Team.teamData.first(where: { $0.teamID == teamID }) ?? Team.teamData[30]
     }
+}
+
+struct PlayerHeadshot {
+    var playerID: Int
+    var pic: Image
 }
 
 // These are prepopulated to minimize API calls.
@@ -82,21 +90,5 @@ extension Player {
 //        Player(playerID: 237, firstName: "Lebron", lastName: "James", heightFt: 6, heightIn: 8, position: "F", teamID: 14),
 //        Player(playerID: 666786, firstName: "Ja", lastName: "Morant", position: "G", teamID: 15),
 //        Player(playerID: 247, firstName: "Kawhi", lastName: "Leonard", heightFt: 6, heightIn: 7, position: "F", teamID: 13)
-//        "JERSEY_NUMBER",
-//                    "POSITION",
-//                    "HEIGHT",
-//                    "WEIGHT",
-//                    "COLLEGE",
-//                    "COUNTRY",
-//                    "DRAFT_YEAR",
-//                    "DRAFT_ROUND",
-//                    "DRAFT_NUMBER",
-//                    "ROSTER_STATUS",
-//                    "PTS",
-//                    "REB",
-//                    "AST",
-//                    "STATS_TIMEFRAME",
-//                    "FROM_YEAR",
-//                    "TO_YEAR"
     ]
 }

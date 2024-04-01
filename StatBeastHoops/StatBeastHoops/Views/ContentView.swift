@@ -7,18 +7,26 @@
 
 import SwiftUI
 
+@MainActor
 struct ContentView: View {
-    var apiManager = DataManager()
-    var favoritesManager = FavoritesManager()
-    var settingsManager = SettingsManager()
-    var locationManager = LocationManager()
-    var soundsManager = SoundsManager()
+    @StateObject var apiManager : DataManager
+    @StateObject var playerDataManager : PlayerDataManager
+    @StateObject var settingsManager : SettingsManager
+    @StateObject var locationManager : LocationManager
+    @StateObject var soundsManager : SoundsManager
+    
+//    var apiManager = DataManager()
+//    var playerDataManager = PlayerDataManager()
+//    var favoritesManager = FavoritesManager()
+//    var settingsManager = SettingsManager()
+//    var locationManager = LocationManager()
+//    var soundsManager = SoundsManager()
     
     @State private var faveTeamID : Int = Team.teamData[30].teamID
     
     var body: some View {
         TabView {
-            HomeView(apiManager: apiManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager, myTeamID: $faveTeamID)
+            HomeView(apiManager: apiManager, playerDataManager: playerDataManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager, myTeamID: $faveTeamID)
                 .tabItem {
                     Label("Home", systemImage: "list.dash")
                 }
@@ -33,12 +41,12 @@ struct ContentView: View {
                     Label("Favorites", systemImage: "heart.text.square")
                 }
             
-            PlayersView(apiManager: apiManager)
+            PlayersView(playerDataManager: playerDataManager)
                 .tabItem {
                     Label("Players", systemImage: "person.3")
                 }
             
-            TeamsView(apiManager: apiManager)
+            TeamsView(apiManager: apiManager, playerDataManager: playerDataManager)
                 .tabItem {
                     Label {
                         Text("Teams")
@@ -47,7 +55,7 @@ struct ContentView: View {
                     }
                 }
         }
-        .overlay(SplashView(apiManager: apiManager).onDisappear{print("gone")})
+//        .overlay(SplashView(playerDataManager: playerDataManager).onDisappear{print("gone")})
         .onAppear(perform: {
             print("tabbar")
             faveTeamID = settingsManager.settingsDict["faveTeamID"] as? Int ?? Team.teamData[30].teamID
@@ -56,5 +64,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(apiManager: DataManager(), playerDataManager: PlayerDataManager(), settingsManager: SettingsManager(), locationManager: LocationManager(), soundsManager: SoundsManager())
 }

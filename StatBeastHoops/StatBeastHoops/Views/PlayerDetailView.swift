@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PlayerDetailView: View {
-    @StateObject var apiManager : DataManager
+    @StateObject var playerDataManager : PlayerDataManager
     
     @State var isFav = false
     @State private var season = "2023-24"
@@ -217,5 +217,5 @@ struct PlayerDetailView: View {
 }
 
 #Preview {
-    PlayerDetailView(apiManager: DataManager(), p: Player.demoPlayer)
+    PlayerDetailView(playerDataManager: PlayerDataManager(), p: Player.demoPlayer)
 }

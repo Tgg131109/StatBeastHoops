@@ -7,56 +7,62 @@
 
 import SwiftUI
 
+@MainActor
 struct SplashView: View {
-    @StateObject var apiManager : DataManager
+    var apiManager = DataManager()
+    var teamDataManager = TeamDataManager()
+    var playerDataManager = PlayerDataManager()
+    var favoritesManager = FavoritesManager()
+    var settingsManager = SettingsManager()
+    var locationManager = LocationManager()
+    var soundsManager = SoundsManager()
+    
+    @State var isTaskRunning = true
+    @State var statusStr = "Getting team standings..."
+//    @StateObject var apiManager : DataManager
+//    @StateObject var playerDataManager : PlayerDataManager
     
     var body: some View {
-        VStack {
-            if apiManager.isTaskRunning {
+        ZStack {
+            if isTaskRunning {
                 loadingView
-//                IndeterminateProgressView()
-//                ProgressView().progressViewStyle(.linear)
-                
-//                ProgressView(value: apiManager.progress) {
-//                       Text("Label")
-//                   } currentValueLabel: {
-//                       Text("Current Value Label: \(apiManager.progress)")
-//                   }
-                
-                
-//                ProgressView("Fetching data...", value: apiManager.progress)
-////                    .progressViewStyle(LinearProgressViewStyle())
-//                    .padding()
             } else {
-//                TabView {
-//                    HomeView(apiManager: apiManager)
-//                        .tabItem {
-//                            Label("Home", systemImage: "list.dash")
-//                        }
-//                    
-//                    CompareView(apiManager: apiManager)
-//                        .tabItem {
-//                            Label("Compare", systemImage: "square.and.pencil")
-//                        }
-//                    
-//                    FavoritesView()
-//                        .tabItem {
-//                            Label("Favorites", systemImage: "heart.text.square")
-//                        }
-//                    
-//                    PlayersView(apiManager: apiManager)
-//                        .tabItem {
-//                            Label("Players", systemImage: "person.3")
-//                        }
-//                    
-//                    TeamsView(apiManager: apiManager)
-//                        .tabItem {
-//                            Label("Teams", systemImage: "basketball")
-//                        }
-//                }
+                ContentView(apiManager: apiManager, playerDataManager: playerDataManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager)
             }
         }.onAppear(perform: {   Task{
-            _ = await apiManager.getAllPlayers()
+            // Get team standings
+            _ = await teamDataManager.getTeamStandings()
+            // Get team rosters
+            statusStr = "Getting team rosters..."
+            await withTaskGroup(of: [Player].self) { group in
+                for team in Team.teamData {
+                    if team.teamID != 31 {
+                        group.addTask {
+                            return await teamDataManager.getTeamRosters(teamID: team.teamID)
+                        }
+                    }
+                }
+                
+                for await roster in group {
+                }
+            }
+            
+//            print(teamDataManager.teamPlayers.count)
+            // Get league leaders
+            statusStr = "Getting league leaders..."
+            _ = await playerDataManager.getLeaders(cat: "PTS")
+            // Get today's games
+            statusStr = "Getting today's games..."
+//            _ = await playerDataManager.getAllPlayers()
+            // Get all players
+            statusStr = "Getting players..."
+            _ = await playerDataManager.getAllPlayers()
+
+            statusStr = "Done"
+            
+            withAnimation {
+                isTaskRunning = false
+            }
         } })
     }
     
@@ -67,7 +73,7 @@ struct SplashView: View {
 //            ProgressView().padding().controlSize(.extraLarge).tint(LinearGradient(colors: [Color.blue, Color.red], startPoint: .bottomLeading, endPoint: .topTrailing))
 //            LinearGradient(colors: [Color.pink, Color.purple], startPoint: .bottomLeading, endPoint: .topTrailing)
 //            ProgressView().padding().controlSize(.extraLarge).progressViewStyle(LinearProgressViewStyle(tint: Color.yellow))
-            Text("Gathering data...").italic().bold()//.foregroundStyle(.background)
+            Text(statusStr).italic().bold()//.foregroundStyle(.background)
         }.frame(maxWidth: .infinity, maxHeight: .infinity).background(.ultraThinMaterial).foregroundStyle(
             LinearGradient(
                 colors: [.teal, .primary],
@@ -106,5 +112,5 @@ struct SplashView: View {
 //}
 
 #Preview {
-    SplashView(apiManager: DataManager())
+    SplashView(playerDataManager: PlayerDataManager())
 }
