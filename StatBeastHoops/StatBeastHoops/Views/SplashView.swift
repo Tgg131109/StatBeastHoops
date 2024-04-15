@@ -16,6 +16,7 @@ struct SplashView: View {
     var settingsManager = SettingsManager()
     var locationManager = LocationManager()
     var soundsManager = SoundsManager()
+    var playerCompareVM = PlayerCompareViewModel()
     
     @State var isTaskRunning = true
     @State var statusStr = "Getting team standings..."
@@ -27,37 +28,43 @@ struct SplashView: View {
             if isTaskRunning {
                 loadingView
             } else {
-                ContentView(apiManager: apiManager, playerDataManager: playerDataManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager)
+                ContentView(apiManager: apiManager, teamDataManager: teamDataManager, playerDataManager: playerDataManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager, playerCompareVM: playerCompareVM, favoritesManager: favoritesManager)
             }
         }.onAppear(perform: {   Task{
             // Get team standings
             _ = await teamDataManager.getTeamStandings()
-            // Get team rosters
-            statusStr = "Getting team rosters..."
-            await withTaskGroup(of: [Player].self) { group in
-                for team in Team.teamData {
-                    if team.teamID != 31 {
-                        group.addTask {
-                            return await teamDataManager.getTeamRosters(teamID: team.teamID)
-                        }
-                    }
-                }
-                
-                for await roster in group {
-                }
-            }
             
-//            print(teamDataManager.teamPlayers.count)
+            // Get team rosters
+//            statusStr = "Getting team rosters..."
+//            await withTaskGroup(of: [Player].self) { group in
+//                for team in Team.teamData {
+//                    if team.teamID != 31 {
+//                        group.addTask {
+//                            return await teamDataManager.getTeamRosters(teamID: team.teamID)
+//                        }
+//                    }
+//                }
+//                
+////                for await roster in group {
+////                }
+//            }
+            
             // Get league leaders
             statusStr = "Getting league leaders..."
             _ = await playerDataManager.getLeaders(cat: "PTS")
+            
             // Get today's games
             statusStr = "Getting today's games..."
 //            _ = await playerDataManager.getAllPlayers()
+            
             // Get all players
             statusStr = "Getting players..."
             _ = await playerDataManager.getAllPlayers()
 
+            // Get all player stats
+            statusStr = "Getting player stats..."
+            _ = await playerDataManager.getAllPlayerStats()
+            
             statusStr = "Done"
             
             withAnimation {

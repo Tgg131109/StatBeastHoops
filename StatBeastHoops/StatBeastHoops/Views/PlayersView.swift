@@ -9,12 +9,13 @@ import SwiftUI
 
 struct PlayersView: View {
     @StateObject var playerDataManager : PlayerDataManager
+    @StateObject var favoritesManager : FavoritesManager
     
     @State private var searchText = ""
     @State private var searchScope = "Current"
-    @State private var criterion = "PTS"
+//    @State private var criterion = "PTS"
     
-    @State var players = [Player]()
+//    @State var players = [Player]()
     @State var leaders = [Player]()
     @State var criteria = [String]()
     
@@ -22,60 +23,49 @@ struct PlayersView: View {
 
     var searchResults: [Player] {
         if searchText.isEmpty {
-            return leaders
+            return playerDataManager.allPlayers
         } else {
-//            return players.filter { $0.firstName.contains(searchText) || $0.lastName.contains(searchText) }
-            return players.filter { ("\($0.firstName) \($0.lastName)").contains(searchText) }
+            return playerDataManager.allPlayers.filter { ("\($0.firstName) \($0.lastName)").contains(searchText) }
         }
     }
     
     var body: some View {
-        NavigationStack {
+//        NavigationStack {
             VStack {
                 List {
-                    Section(header: HStack {
-                        Text(searchText.isEmpty ? "League Leaders -" : "Results")
-                        
-                        if searchText.isEmpty {
-                            Picker("League Leaders", selection: $criterion) {
-                                ForEach(criteria, id: \.self) {
-                                    Text($0)
-                                }
-                            }.pickerStyle(.menu).padding(.leading, -15)
-                        }
-                    }) {
+                    Section("All Players") {
                         ForEach(searchResults, id: \.playerID) { player in
                             if searchText.isEmpty {
-                                PlayerRowView(playerDataManager: playerDataManager, player: player, rowType: searchText.isEmpty ? "leaders" : "players")
+                                PlayerRowView(playerDataManager: playerDataManager, favoritesManager: favoritesManager, player: player, rowType: "players")
                             } else {
                                 Text("\(player.firstName) \(player.lastName)")
                             }
                         }
                     }
                 }.listStyle(.plain)
-                    .navigationTitle("Players")
-                    .toolbarTitleDisplayMode(.inline)
+//                    .navigationTitle("Players")
+//                    .toolbarTitleDisplayMode(.inline)
                     .onAppear(perform: {   Task{
-                        leaders = playerDataManager.leaders
-                        players = playerDataManager.allPlayers
-                        criteria = playerDataManager.statCriteria
+//                        leaders = playerDataManager.leaders
+//                        players = playerDataManager.allPlayers
+//                        criteria = playerDataManager.statCriteria
                     } })
                 
-                Text("\(searchResults.count) players found").italic().font(.caption)
+                Text("\(searchResults.count) players found").italic().font(.caption).padding(.vertical, 6)
             }
-        }.searchable(text: $searchText)
-            .searchScopes($searchScope) {
-                ForEach(searchScopes, id: \.self) { scope in
-                    Text(scope.capitalized)
-                }
-            }
-            .onSubmit(of: .search) {
-                print(searchText)
-                searchText = ""
-            }
+//        }.searchable(text: $searchText)
+//            .searchScopes($searchScope) {
+//                ForEach(searchScopes, id: \.self) { scope in
+//                    Text(scope.capitalized)
+//                }
+//            }
+//            .onSubmit(of: .search) {
+//                print(searchText)
+//                searchText = ""
+//            }
     }
 }
 
 #Preview {
-    PlayersView(playerDataManager: PlayerDataManager())
+    PlayersView(playerDataManager: PlayerDataManager(), favoritesManager: FavoritesManager())
 }

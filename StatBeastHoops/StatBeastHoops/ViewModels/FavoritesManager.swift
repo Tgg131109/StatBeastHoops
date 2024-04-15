@@ -46,10 +46,14 @@ class FavoritesManager: ObservableObject {
         var teams = [Team]()
         
         for id in teamIDs {
-            teams.append(Team.teamData[id - 1])
+            teams.append(Team.teamData.first(where: { $0.teamID == id }) ?? Team.teamData[30])
         }
         
         return teams
+    }
+    
+    func getMatchups() -> [String] {
+        return []
     }
     
     // returns true if our set contains the selected player

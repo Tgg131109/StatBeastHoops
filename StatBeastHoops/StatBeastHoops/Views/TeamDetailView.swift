@@ -9,20 +9,26 @@ import SwiftUI
 import Charts
 
 struct TeamDetailView: View {
-    @StateObject var apiManager: DataManager
+//    @StateObject var apiManager : DataManager
+    @StateObject var vm : TeamDataManager
     @StateObject var playerDataManager : PlayerDataManager
+    @StateObject var favoritesManager : FavoritesManager
     
-    @State var isFav = false
+//    @State var isFav = false
     @State private var season = "2023-24"
     @State private var selView = 0
     @State var r = [Player]()
     
     let team: Team
     
+    var isFav : Bool {
+        return favoritesManager.contains(team)
+    }
+    
     var body: some View {
         let pc = team.priColor
         
-        NavigationStack {
+//        NavigationStack {
             VStack {
                 ZStack {
                     Image(uiImage: team.logo).resizable().rotationEffect(.degrees(-35)).aspectRatio(contentMode: .fill)
@@ -32,7 +38,14 @@ struct TeamDetailView: View {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading) {
                             Button {
-                                isFav.toggle()
+//                                isFav.toggle()
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    if isFav {
+                                        favoritesManager.remove(team)
+                                    } else {
+                                        favoritesManager.add(team)
+                                    }
+                                }
                             } label: {
                                 Image(systemName: isFav ? "star.fill" : "star")
                                 Text(isFav ? "Favorited" : "Favorite")
@@ -62,7 +75,7 @@ struct TeamDetailView: View {
                 }.padding(.bottom, -80)
                 
                 Picker("Season", selection: $season) {
-                    ForEach(apiManager.seasons, id: \.self) {
+                    ForEach(playerDataManager.seasons, id: \.self) {
                         Text($0)
                     }
                 }
@@ -86,7 +99,7 @@ struct TeamDetailView: View {
                 } else if selView == 1 {
                     List{
                         ForEach(r, id: \.playerID) { player in
-                            PlayerRowView(playerDataManager: playerDataManager, player: player, rowType: "roster")
+                            PlayerRowView(playerDataManager: playerDataManager, favoritesManager: favoritesManager, player: player, rowType: "roster")
                         }
                     }
                     .listStyle(.plain)
@@ -100,12 +113,14 @@ struct TeamDetailView: View {
             }
             .navigationTitle(team.abbr)
             .toolbarTitleDisplayMode(.inline)
-        }.onAppear(perform: {   Task{
-            r = await apiManager.getTeamRoster(teamID: "\(team.teamID)")
+//        }
+        .onAppear(perform: {   Task{
+            r = await vm.getTeamRoster(teamID: team.teamID)
+//            await $vm.getTeamRoster(teamID: "\(team.teamID)")
         } })
     }
 }
 
 #Preview {
-    TeamDetailView(apiManager: DataManager(), playerDataManager: PlayerDataManager(), team: Team.teamData[15])
+    TeamDetailView(vm: TeamDataManager(), playerDataManager: PlayerDataManager(), favoritesManager: FavoritesManager(), team: Team.teamData[15])
 }

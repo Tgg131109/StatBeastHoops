@@ -547,9 +547,10 @@ class DataManager : ObservableObject {
         for pID in pIDs {
             if let gss = gameStats.first(where: { $0.id == pID}) {
                 let statSeries = gss.statData
+                let p = Int(pID) == p1?.playerID ? p1 : p2
                 
                 if let at = statSeries.first(where: { $0.category == "\(criteria)"})?.statData {
-                    gameStatCompare.append(StatSeriesCompare(id: pID, statSeries: at))
+                    gameStatCompare.append(StatSeriesCompare(id: pID, statSeries: at, color: Color((p?.team.priColor)!)))
                 }
             }
         }

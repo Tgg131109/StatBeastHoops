@@ -90,7 +90,7 @@ class TeamDataManager : ObservableObject {
 //        return teams
     }
     
-    func getTeamRosters(teamID: Int) async -> [Player] {
+    func getTeamRoster(teamID: Int) async -> [Player] {
 //        teamRoster.removeAll()
 //        var teamIDs = [String]()
 //        
@@ -187,7 +187,7 @@ class TeamDataManager : ObservableObject {
                                     fname = nameComps.givenName ?? p["PLAYER"] as! String
                                     lname = nameComps.familyName ?? ""
                                 }
-                                //                            print(p["NUM"])
+                                
                                 roster.append(Player(playerID: p["PLAYER_ID"] as! Int, firstName: fname, lastName: lname, nickName: p["NICKNAME"] as? String, rank: 0, teamID: p["TeamID"] as! Int, jersey: p["NUM"] as? String, position: p["POSITION"] as? String, height: p["HEIGHT"] as? String, weight: p["WEIGHT"] as? String, birthDate: p["BIRTH_DATE"] as? String, exp: p["EXP"] as? String, college: p["SCHOOL"] as? String, howAcquired: p["HOW_ACQUIRED"] as? String, age: p["AGE"] as? Int))
                             }
                             

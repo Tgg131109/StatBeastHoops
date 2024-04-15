@@ -10,7 +10,7 @@ import Foundation
 import SwiftUI
 
 struct Player: Decodable, Encodable, Identifiable {
-    var id: Int { playerID }
+    var id: String { String(playerID) }
     
     var playerID: Int
     var firstName: String
@@ -26,10 +26,13 @@ struct Player: Decodable, Encodable, Identifiable {
     var exp: String? = "UNK"
     var college: String? = "UNK"
     var country: String? = "UNK"
-    var draftYear: String? = "UNK"
-    var draftRound: String? = "UNK"
+    var draftYear: Int? = -1
+    var draftNum: Int? = -1
+    var draftRound: Int? = -1
     var rosterStatus: String? = "UNK"
     var howAcquired: String? = "UNK"
+//    var pic: Image? = nil
+    
 //    var stats: [pStat]?
     var age: Int? = -1
     var gp: Double? = -1
@@ -62,12 +65,43 @@ struct Player: Decodable, Encodable, Identifiable {
     }
     
     var draft : String {
-        return "\(draftRound ?? "-") \(draftYear ?? "-")"
+        return "\(draftRound ?? -1) \(draftYear ?? -1)"
     }
     
     var team : Team {
         return Team.teamData.first(where: { $0.teamID == teamID }) ?? Team.teamData[30]
     }
+    
+//    var headshot : Image {
+//        if let hs = pic {
+//            return hs
+//        } else {
+//            // Download image
+//            var headshotView: some View {
+//                AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { phase in
+//                    switch phase {
+//                    case .empty:
+//                        Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
+//                    case .success(let image):
+//                        let _ = DispatchQueue.main.async {
+//                            playerDataManager.playerHeadshots.append(PlayerHeadshot(playerID: player.playerID, pic: image))
+//                        }
+//                        
+//                        image.resizable().scaledToFit()
+//                    case .failure:
+//                        Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
+//                    @unknown default:
+//                        Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
+//                    }
+//                }
+//                .frame(width: 80, height: 60, alignment: .bottom)
+//                .padding(.trailing, -20)
+//            }
+//        }
+//    }
+//    var stats : PlayerStats {
+//        
+//    }
 }
 
 struct PlayerHeadshot {
@@ -78,6 +112,9 @@ struct PlayerHeadshot {
 // These are prepopulated to minimize API calls.
 extension Player {
     static let demoPlayer : Player = Player(playerID: 202710, firstName: "Jimmy", lastName: "Butler", nickName: "Jimmy", rank: 0, teamID: 1610612748, jersey: "22", position: "F", height: "6-7", weight: "230", birthDate: "SEP 14, 1989", exp: "12", college: "Marquette", age: 34)
+    
+    static let emptyData : [Any] = ["DataSet", "name", "id", "name", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    static let emptyVsData : [Any] = ["vs Player", "id", "name", "vs id", "vs PlayerName", "onOff", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     
     static let popularPlayers : [Player] = [
 //        Player(playerID: 15, firstName: "Giannis", lastName: "Antetokounmpo", heightFt: 6, heightIn: 11, position: "F", teamID: 17),

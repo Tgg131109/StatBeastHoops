@@ -6,21 +6,31 @@
 //
 
 import SwiftUI
+//import Foundation
 
 struct PlayerDetailView: View {
     @StateObject var playerDataManager : PlayerDataManager
+    @StateObject var favoritesManager : FavoritesManager
     
-    @State var isFav = false
+//    @State var isFav = false
+    @State var seasons = [String]()
     @State private var season = "2023-24"
     @State private var selView = 0
+    @State var seasonStats = SeasonStats()
+    @State var gameStats : [GameStats] = []
     
     let p : Player
+    
+    var isFav : Bool {
+        return favoritesManager.contains(p)
+    }
+//    @State private var downloadAmount = 0.0
     
     var body: some View {
         let team = p.team
         let pc = team.priColor
         
-        NavigationStack {
+//        NavigationStack {
             VStack {
                 ZStack {
                     Image(uiImage: team.logo).resizable().rotationEffect(.degrees(-35)).aspectRatio(contentMode: .fill)
@@ -30,7 +40,14 @@ struct PlayerDetailView: View {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading) {
                             Button {
-                                isFav.toggle()
+//                                isFav.toggle()
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    if isFav {
+                                        favoritesManager.remove(p)
+                                    } else {
+                                        favoritesManager.add(p)
+                                    }
+                                }
                             } label: {
                                 Image(systemName: isFav ? "star.fill" : "star")
                                 Text(isFav ? "Favorited" : "Favorite")
@@ -77,29 +94,38 @@ struct PlayerDetailView: View {
                 // Per game stats.
                 HStack(spacing: 0) {
                     VStack {
-                        Text("\(p.height ?? "-1")").bold()
+                        let s = String(format: "%.1f", (Double((seasonStats.pts
+                                                               ?? -1)/(seasonStats.gp
+                                                                       ?? -1))))
+                        Text("\(s)").bold()
                         Text("PPG").font(.caption2)
                     }.frame(maxWidth: .infinity).foregroundStyle(.background).padding(.vertical, 10).border(.background)
                     
 //                    Divider()
                     
                     VStack {
-                        Text("\(p.weight ?? "-1")").bold()
+                        let s = String(format: "%.1f", (Double((seasonStats.reb
+                                                               ?? -1)/(seasonStats.gp
+                                                                       ?? -1))))
+                        Text("\(s)").bold()
                         Text("RPG").font(.caption2)
                     }.frame(maxWidth: .infinity).foregroundStyle(.background).padding(.vertical, 10).border(.background)
                     
 //                    Divider()
                     
                     VStack {
-                        Text("\(p.age ?? 0)").bold()
+                        let s = String(format: "%.1f", (Double((seasonStats.ast
+                                                               ?? -1)/(seasonStats.gp
+                                                                       ?? -1))))
+                        Text("\(s)").bold()
                         Text("APG").font(.caption2)
                     }.frame(maxWidth: .infinity).foregroundStyle(.background).padding(.vertical, 10).border(.background)
                     
 //                    Divider()
                     
                     VStack {
-                        Text("\(p.age ?? 0)").bold()
-                        Text("FANT").font(.caption2)
+                        Text("\(Int(seasonStats.gp ?? 0))").bold()
+                        Text("GP").font(.caption2)
                     }.frame(maxWidth:  .infinity).foregroundStyle(.background).padding(.vertical, 10).border(.background)
                 }.background(Color(pc)).frame(maxHeight: 30).padding(.top,8)
                 
@@ -173,7 +199,33 @@ struct PlayerDetailView: View {
                 .padding(.horizontal, 20)
                 
                 if selView == 0 {
-                    
+                    if !gameStats.isEmpty {
+                        Table(gameStats) {
+                            TableColumn("VS", value: \.matchup)
+                            TableColumn("Date", value: \.gameDate)
+                            TableColumn("W/L", value: \.wl)
+                            TableColumn("MIN") { stat in Text(String(format: "%.1f", stat.min ?? -1)) }
+                            TableColumn("PTS") { stat in Text(String(format: "%.1f", stat.pts ?? -1)) }
+                            TableColumn("FGM") { stat in Text(String(format: "%.1f", stat.fgm ?? -1)) }
+                            TableColumn("FGA") { stat in Text(String(format: "%.1f", stat.fga ?? -1)) }
+                            TableColumn("FG%") { stat in Text(String(format: "%.1f", stat.fg_pct ?? -1)) }
+                            TableColumn("3PM") { stat in Text(String(format: "%.1f", stat.fg3m ?? -1)) }
+                            TableColumn("3PA") { stat in Text(String(format: "%.1f", stat.fg3a ?? -1)) }
+//                            TableColumn("3P%") { stat in Text(String(format: "%.1f", stat.fg3_pct ?? -1)) }
+//                            TableColumn("FTM") { stat in Text(String(format: "%.1f", stat.ftm ?? -1)) }
+//                            TableColumn("FTA") { stat in Text(String(format: "%.1f", stat.fta ?? -1)) }
+//                            TableColumn("FT%") { stat in Text(String(format: "%.1f", stat.ft_pct ?? -1)) }
+//                            TableColumn("OREB") { stat in Text(String(format: "%.1f", stat.oreb ?? -1)) }
+//                            TableColumn("DREB") { stat in Text(String(format: "%.1f", stat.dreb ?? -1)) }
+//                            TableColumn("REB") { stat in Text(String(format: "%.1f", stat.reb ?? -1)) }
+//                            TableColumn("AST") { stat in Text(String(format: "%.1f", stat.ast ?? -1)) }
+//                            TableColumn("STL") { stat in Text(String(format: "%.1f", stat.stl ?? -1)) }
+//                            TableColumn("BLK") { stat in Text(String(format: "%.1f", stat.blk ?? -1)) }
+//                            TableColumn("TOV") { stat in Text(String(format: "%.1f", stat.tov ?? -1)) }
+//                            TableColumn("PF") { stat in Text(String(format: "%.1f", stat.pf ?? -1)) }
+//                            TableColumn("+/-") { stat in Text(String(format: "%.1f", stat.pm ?? -1)) }
+                        }
+                    }
                 } else if selView == 1 {
                     
                 } else {
@@ -182,8 +234,10 @@ struct PlayerDetailView: View {
                 
                 Spacer()
                 
-                Text(p.lastName)
-            }.toolbar {
+//                Text(p.lastName)
+//                ProgressView("Downloading…", value: downloadAmount, total: 100)
+            }
+            .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack {
                         Text(team.homeTown).bold().padding(.trailing, -10)
@@ -193,8 +247,14 @@ struct PlayerDetailView: View {
                 }
             }
             .toolbarTitleDisplayMode(.inline)
-        }.onAppear(perform: {   Task{
+//        }
+        .onAppear(perform: {   Task{
+            await getPlayerStats()
+//            _ = await playerDataManager.getPlayerStats(pID: p.playerID)
 //            r = await apiManager.getTeamRoster(teamID: "\(team.teamID)")
+//            TestFile().download(pID: p.playerID) { progress in
+//                downloadAmount = Double(progress)
+//            }
         } })
         
 //        Text("\(p.firstName)")
@@ -214,8 +274,28 @@ struct PlayerDetailView: View {
 //        Text("\(p.rosterStatus ?? "-")")
 //        Text("\(p.howAcquired  ?? "-")")
     }
+    
+    func getPlayerStats() async {
+        _ = await playerDataManager.getPlayerStats(pID: p.playerID)
+        _ = await playerDataManager.getPlayerGameStats(pID: p.playerID)
+//        _ = await playerDataManager.testFunc(pID: p.playerID)
+        if let stats = playerDataManager.playerStats.first(where: { $0.playerID == p.playerID }) {
+            for k in stats.seasonStats.keys {
+//                print(k)
+                seasons.append(k)
+            }
+            
+            if let ss = stats.seasonStats["2023-24"] {
+                seasonStats =  ss
+            }
+        }
+        
+        if let gs = playerDataManager.playerGameStats.first(where: { $0.playerID == p.playerID && $0.season == season })?.gameStats {
+            gameStats = gs
+        }
+    }
 }
 
 #Preview {
-    PlayerDetailView(playerDataManager: PlayerDataManager(), p: Player.demoPlayer)
+    PlayerDetailView(playerDataManager: PlayerDataManager(), favoritesManager: FavoritesManager(), p: Player.demoPlayer)
 }

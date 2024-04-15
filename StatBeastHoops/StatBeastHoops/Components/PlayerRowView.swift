@@ -9,6 +9,7 @@ import SwiftUI
 
 struct PlayerRowView: View {
     @StateObject var playerDataManager : PlayerDataManager
+    @StateObject var favoritesManager : FavoritesManager
     
 //    @State private var showComparePage: Bool = false
 //    @State private var showCompareOptions: Bool = false
@@ -29,7 +30,21 @@ struct PlayerRowView: View {
         
         ZStack(alignment: .center) {
             NavigationLink {
-                PlayerDetailView(playerDataManager: playerDataManager, p: player)
+//                let pd = rowType == "leaders" ? player.team.roster?.first(where: { $0.playerID == player.playerID }) : player
+                
+                PlayerDetailView(playerDataManager: playerDataManager, favoritesManager: favoritesManager, p: player.team.roster?.first(where: { $0.playerID == player.playerID }) ?? player)
+                
+//                if rowType == "leaders" {
+//                    if let p = player.team.roster?.first(where: { $0.playerID == player.playerID }) {
+//                        PlayerDetailView(playerDataManager: playerDataManager, p: p)
+//                    } else {
+//                        PlayerDetailView(playerDataManager: playerDataManager, p: player)
+//                    }
+//                } else {
+//                    PlayerDetailView(playerDataManager: playerDataManager, p: player)
+//                }
+
+                
             } label: {
                 ZStack(alignment: .center) {
                     Text(rn).font(.system(size: 60)).fontWeight(.black).foregroundStyle(.tertiary).frame(maxWidth: .infinity, alignment: .leading)
@@ -68,39 +83,40 @@ struct PlayerRowView: View {
                             
                             Text(player.firstName).padding(.bottom, -10)
                             Text(player.lastName).font(.title2).minimumScaleFactor(0.1).bold()
+                            
                             HStack {
                                 if rowType == "leaders" {
                                     Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill).frame(width: 25)
-                                }
-                                
-                                HStack(alignment: .bottom) {
-                                    Text(pos)
-                                    Divider().frame(maxWidth: 2).overlay(.background).padding(.vertical, -10)
-                                    Text("#\(player.jersey ?? "-")")
-                                }.font(.caption).bold().foregroundStyle(.background).padding(.horizontal, 8).padding(.vertical, 2).background(
-                                    RoundedRectangle(
-                                        cornerRadius: 4,
-                                        style: .continuous
+                                    Text(player.team.abbr).foregroundStyle(.tertiary).bold().font(.callout)
+                                } else {
+                                    HStack(alignment: .bottom) {
+                                        Text(pos)
+                                        Divider().frame(maxWidth: 2).overlay(.background).padding(.vertical, -10)
+                                        Text("#\(player.jersey ?? "-")")
+                                    }.font(.caption).bold().foregroundStyle(.background).padding(.horizontal, 8).padding(.vertical, 2).background(
+                                        RoundedRectangle(
+                                            cornerRadius: 4,
+                                            style: .continuous
+                                        )
+                                        .fill(Color(pc))
                                     )
-                                    .fill(Color(pc))
-                                )
-                                
-                                Button {
-                                    playerDataManager.sp = player
-                                    
-                                    if !playerDataManager.showComparePage {
-                                        print("show")
-                                        playerDataManager.showComparePage.toggle()
-                                    } else {
-                                        print(playerDataManager.sp?.id)
-                                    }
-                                } label: {
-//                                    Image(systemName: "figure.basketball")
-//                                    Image(systemName: "figure.basketball")
-//                                    Image(systemName: "figure.stand.line.dotted.figure.stand")
-                                    Image(systemName: "person.line.dotted.person.fill")
-//                                    Image(systemName: "person.line.dotted.person")
-                                }.foregroundStyle(Color(uiColor: pc))
+                                }
+//
+//                                Button {
+//                                    playerDataManager.sp = player
+//                                    
+//                                    if !playerDataManager.showComparePage {
+//                                        playerDataManager.currentDetent = PresentationDetent.height(400)
+//                                        playerDataManager.needsOverlay = true
+//                                        playerDataManager.showComparePage.toggle()
+//                                    }
+//                                } label: {
+////                                    Image(systemName: "figure.basketball")
+////                                    Image(systemName: "figure.basketball")
+////                                    Image(systemName: "figure.stand.line.dotted.figure.stand")
+//                                    Image(systemName: "person.line.dotted.person.fill")
+////                                    Image(systemName: "person.line.dotted.person")
+//                                }.foregroundStyle(Color(uiColor: pc))
                             }.frame(maxHeight: 10).padding(.top, -10)
                         }
                         
@@ -137,9 +153,9 @@ struct PlayerRowView: View {
                 }
             }
         }
-        .buttonStyle(.plain)
-//        .sheet(isPresented: $showComparePage) {
-//            CompareView(apiManager: apiManager, sp: player).presentationDetents([.medium, .large, .fraction(0.8), .height(400)],selection: $apiManager.currentDetent)
+//        .buttonStyle(.plain)
+//        .sheet(isPresented: $playerDataManager.showComparePage) {
+//            CompareView(playerDataManager: playerDataManager, sp: player, needsOverlay: true).presentationDetents([.medium, .large, .fraction(0.8), .height(400)],selection: $playerDataManager.currentDetent)
 //                .presentationBackgroundInteraction(.enabled)
 //        }
     }
@@ -230,5 +246,5 @@ struct PlayerRowView: View {
 
 
 #Preview {
-    PlayerRowView(playerDataManager: PlayerDataManager(), player: Player.demoPlayer, rowType: "leaders")
+    PlayerRowView(playerDataManager: PlayerDataManager(), favoritesManager: FavoritesManager(), player: Player.demoPlayer, rowType: "leaders")
 }
