@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct PlayerSearchView: View {
+    @EnvironmentObject var vm : PlayerCompareViewModel
+    @EnvironmentObject var playerDataManager : PlayerDataManager
+    
     @StateObject var cvm : CompareViewModel
-    @StateObject var vm : PlayerCompareViewModel
-//    @StateObject var apiManager : DataManager
-    @StateObject var playerDataManager : PlayerDataManager
     
     @State private var searchText = ""
     @State private var criterion = "PTS"
@@ -25,7 +25,7 @@ struct PlayerSearchView: View {
     let teams = Team.teamData
     let searchScopes = ["All", "Current", "Former"]
     
-    var playerResults: [Player] {
+    var searchResults: [Player] {
         if searchText.isEmpty {
             return playerDataManager.allPlayers
         } else {
@@ -38,7 +38,7 @@ struct PlayerSearchView: View {
         //            LazyVGrid(columns: [GridItem(.fixed(100))]) {
         //            Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
         VStack {
-            List(playerResults, id: \.id, selection: $selection) { player in
+            List(searchResults, id: \.id, selection: $selection) { player in
                 HStack {
                     AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
                         image
@@ -68,10 +68,6 @@ struct PlayerSearchView: View {
                 .disabled(selection.isEmpty)
             }
             
-//            Divider()
-            
-//            Text("Current Player Selections")
-            
             if !selection.isEmpty {
                 List {
                     Section(header: Text("Current Selections")) {
@@ -95,8 +91,8 @@ struct PlayerSearchView: View {
                             }
                         }
                     }
-                    
-                }.frame(maxHeight: 150)
+                }
+                .frame(maxHeight: 150)
             }
             
             if selection.count > 2 {
@@ -130,14 +126,14 @@ struct PlayerSearchView: View {
                         
                     }
                     
-                    vm.showSetup = false
+                    vm.showCompareSetup = false
                 }
                 .disabled(selection.count != 2)
                 .buttonStyle(.borderedProminent)
                 .padding()
             }
         }
-        .searchable(text: $searchText)
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Find players")
         .searchScopes($searchScope) {
             ForEach(searchScopes, id: \.self) { scope in
                 Text(scope.capitalized)
@@ -164,5 +160,5 @@ struct PlayerSearchView: View {
 }
 
 #Preview {
-    PlayerSearchView(cvm: CompareViewModel(), vm: PlayerCompareViewModel(), playerDataManager: PlayerDataManager(), p: 1)
+    PlayerSearchView(cvm: CompareViewModel(), p: 1)
 }

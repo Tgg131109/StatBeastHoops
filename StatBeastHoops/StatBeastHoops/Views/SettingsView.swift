@@ -8,17 +8,17 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @StateObject var settingsManager : SettingsManager
-    @StateObject var locationManager : LocationManager
-    @StateObject var soundsManager : SoundsManager
+    @EnvironmentObject var apiManager : DataManager
+    @EnvironmentObject var settingsManager : SettingsManager
+    @EnvironmentObject var locationManager : LocationManager
+    @EnvironmentObject var soundsManager : SoundsManager
     
-    @State var teams = Team.teamData
-    @State var faveTeamID = Team.teamData[30].teamID
+    @State private var teams = Team.teamData
+    @State private var faveTeamID = Team.teamData[30].teamID
     @State private var playSounds = true
-    @State var userName = "Hooper1234"
-    @State var editUserName = false
-    
-    @State var team = Team.teamData[30]
+    @State private var userName = "Hooper1234"
+    @State private var editUserName = false
+    @State private var team = Team.teamData[30]
     
     @Binding var myTeamID : Int
     
@@ -192,5 +192,5 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(settingsManager: SettingsManager(), locationManager: LocationManager(), soundsManager: SoundsManager(), myTeamID: .constant(Team.teamData[30].teamID))
+    SettingsView(myTeamID: .constant(Team.teamData[30].teamID))
 }

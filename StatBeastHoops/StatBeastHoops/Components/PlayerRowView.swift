@@ -8,19 +8,14 @@
 import SwiftUI
 
 struct PlayerRowView: View {
-    @StateObject var playerDataManager : PlayerDataManager
-    @StateObject var favoritesManager : FavoritesManager
+    @EnvironmentObject var playerDataManager : PlayerDataManager
+    @EnvironmentObject var teamDataManager : TeamDataManager
     
-//    @State private var showComparePage: Bool = false
-//    @State private var showCompareOptions: Bool = false
     @State private var selectedPlayer : Player?
-//    @State private var currentDetent = PresentationDetent.height(400)
     
     var player : Player
     var rowType : String
     var criterion: String = "PTS"
-//    var p1 : Player? = nil
-//    var p2 : Player? = nil
     
     var body: some View {
 //        let team = getTeam()
@@ -31,8 +26,8 @@ struct PlayerRowView: View {
         ZStack(alignment: .center) {
             NavigationLink {
 //                let pd = rowType == "leaders" ? player.team.roster?.first(where: { $0.playerID == player.playerID }) : player
-                
-                PlayerDetailView(playerDataManager: playerDataManager, favoritesManager: favoritesManager, p: player.team.roster?.first(where: { $0.playerID == player.playerID }) ?? player)
+//                playerDataManager.sp = player.team.roster?.first(where: { $0.playerID == player.playerID }) ?? player
+                PlayerDetailView(p: player.team.roster?.first(where: { $0.playerID == player.playerID }) ?? player)
                 
 //                if rowType == "leaders" {
 //                    if let p = player.team.roster?.first(where: { $0.playerID == player.playerID }) {
@@ -75,7 +70,7 @@ struct PlayerRowView: View {
                         let wt = player.weight ?? "-"
                         let bd = player.birthDate ?? "-"
                         let age = player.age ?? nil
-                        let exp = player.exp ?? "-"
+                        let exp = player.experience ?? "-"
                         let sch = player.college ?? "-"
                         let ha = player.howAcquired ?? "-"
                         
@@ -101,22 +96,6 @@ struct PlayerRowView: View {
                                         .fill(Color(pc))
                                     )
                                 }
-//
-//                                Button {
-//                                    playerDataManager.sp = player
-//                                    
-//                                    if !playerDataManager.showComparePage {
-//                                        playerDataManager.currentDetent = PresentationDetent.height(400)
-//                                        playerDataManager.needsOverlay = true
-//                                        playerDataManager.showComparePage.toggle()
-//                                    }
-//                                } label: {
-////                                    Image(systemName: "figure.basketball")
-////                                    Image(systemName: "figure.basketball")
-////                                    Image(systemName: "figure.stand.line.dotted.figure.stand")
-//                                    Image(systemName: "person.line.dotted.person.fill")
-////                                    Image(systemName: "person.line.dotted.person")
-//                                }.foregroundStyle(Color(uiColor: pc))
                             }.frame(maxHeight: 10).padding(.top, -10)
                         }
                         
@@ -246,5 +225,5 @@ struct PlayerRowView: View {
 
 
 #Preview {
-    PlayerRowView(playerDataManager: PlayerDataManager(), favoritesManager: FavoritesManager(), player: Player.demoPlayer, rowType: "leaders")
+    PlayerRowView(player: Player.demoPlayer, rowType: "leaders").environmentObject(PlayerDataManager()).environmentObject(FavoritesManager())
 }

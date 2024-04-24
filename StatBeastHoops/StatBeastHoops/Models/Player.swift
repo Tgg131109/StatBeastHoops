@@ -16,6 +16,7 @@ struct Player: Decodable, Encodable, Identifiable {
     var firstName: String
     var lastName: String
     var nickName: String? = ""
+    var age: Int? = -1
     var rank: Int? = -1
     var teamID: Int
     var jersey: String? = "-1"
@@ -23,7 +24,7 @@ struct Player: Decodable, Encodable, Identifiable {
     var height: String? = "0-0"
     var weight: String? = "0"
     var birthDate: String? = "UNK"
-    var exp: String? = "UNK"
+    var experience: String? = "UNK"
     var college: String? = "UNK"
     var country: String? = "UNK"
     var draftYear: Int? = -1
@@ -31,10 +32,11 @@ struct Player: Decodable, Encodable, Identifiable {
     var draftRound: Int? = -1
     var rosterStatus: String? = "UNK"
     var howAcquired: String? = "UNK"
-//    var pic: Image? = nil
     
-//    var stats: [pStat]?
-    var age: Int? = -1
+    var seasonStats: [PlayerSeasonStats]? = []
+    var careerStats: [PlayerCareerStats]? = []
+    
+    
     var gp: Double? = -1
     var gs: Double? = -1
     var min: Double? = -1
@@ -58,6 +60,16 @@ struct Player: Decodable, Encodable, Identifiable {
     var pts: Double? = -1
     var eff: Double? = -1
     
+    var ht : String {
+        let heightArr = height?.split(separator: "-")
+        
+        return "\(heightArr?[0] ?? "-")'\(heightArr?[1] ?? "-")\""
+    }
+    
+    var wt : String {
+        return "\(weight ?? "-") lbs"
+    }
+    
     var attr : String {
         let heightArr = height?.split(separator: "-")
         
@@ -65,7 +77,24 @@ struct Player: Decodable, Encodable, Identifiable {
     }
     
     var draft : String {
-        return "\(draftRound ?? -1) \(draftYear ?? -1)"
+        return "\(draftYear ?? -1) R\(draftRound ?? -1) Pick \(draftNum ?? -1) "
+    }
+    
+    var exp : String {
+        var str = experience
+        
+        guard let s = Int(experience!)
+        else {
+            return str!
+        }
+        
+        if s == 1 {
+            str = "1 season"
+        } else if s > 1{
+            str = "\(s) seasons"
+        }
+        
+        return str!
     }
     
     var team : Team {
@@ -111,7 +140,7 @@ struct PlayerHeadshot {
 
 // These are prepopulated to minimize API calls.
 extension Player {
-    static let demoPlayer : Player = Player(playerID: 202710, firstName: "Jimmy", lastName: "Butler", nickName: "Jimmy", rank: 0, teamID: 1610612748, jersey: "22", position: "F", height: "6-7", weight: "230", birthDate: "SEP 14, 1989", exp: "12", college: "Marquette", age: 34)
+    static let demoPlayer : Player = Player(playerID: 202710, firstName: "Jimmy", lastName: "Butler", nickName: "Jimmy", age: 34, rank: 0, teamID: 1610612748, jersey: "22", position: "F", height: "6-7", weight: "230", birthDate: "SEP 14, 1989", experience: "12", college: "Marquette")
     
     static let emptyData : [Any] = ["DataSet", "name", "id", "name", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     static let emptyVsData : [Any] = ["vs Player", "id", "name", "vs id", "vs PlayerName", "onOff", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

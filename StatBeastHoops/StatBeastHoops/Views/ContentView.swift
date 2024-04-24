@@ -9,25 +9,9 @@ import SwiftUI
 
 @MainActor
 struct ContentView: View {
-    @StateObject var apiManager : DataManager
-    @StateObject var teamDataManager : TeamDataManager
-    @StateObject var playerDataManager : PlayerDataManager
-    @StateObject var settingsManager : SettingsManager
-    @StateObject var locationManager : LocationManager
-    @StateObject var soundsManager : SoundsManager
-    @StateObject var playerCompareVM : PlayerCompareViewModel
-    @StateObject var favoritesManager : FavoritesManager
-//    @StateObject var playerCompareVM : PlayerCompareViewModel
-    
-//    var apiManager = DataManager()
-//    var playerDataManager = PlayerDataManager()
-//    var favoritesManager = FavoritesManager()
-//    var settingsManager = SettingsManager()
-//    var locationManager = LocationManager()
-//    var soundsManager = SoundsManager()
+    @EnvironmentObject var settingsManager : SettingsManager
     
     @State private var faveTeamID : Int = Team.teamData[30].teamID
-    
     @State private var searchText = ""
     @State private var searchScope = "Current"
 
@@ -40,7 +24,7 @@ struct ContentView: View {
     var body: some View {
         TabView {
             NavigationView {
-                HomeView(apiManager: apiManager, playerDataManager: playerDataManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager, favoritesManager: favoritesManager, myTeamID: $faveTeamID)
+                HomeView()
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Text("StatBeast | Hoops").bold().foregroundStyle(.tertiary)
@@ -48,7 +32,7 @@ struct ContentView: View {
                         
                         ToolbarItem(placement: .topBarTrailing) {
                             HStack {
-                                NavButtonsView(playerDataManager: playerDataManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager)
+                                NavButtonsView()
                             }
                         }
                     }
@@ -60,59 +44,31 @@ struct ContentView: View {
                 Label("Today", systemImage: symbol)
                 
             }
-                
-//            NavigationView {
-//                CompareView(playerDataManager: playerDataManager, sp: Player.demoPlayer)
-//                    
-//            }.tabItem { Label("Compare", systemImage: "square.and.pencil") }
-                
-            NavigationView {
-                FavoritesView(vm: favoritesManager, playerDataManager: playerDataManager, teamDataManager: teamDataManager)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Text("Favorites").bold().foregroundStyle(.tertiary)
-                        }
-                        
-                        ToolbarItem(placement: .topBarTrailing) {
-                            HStack {
-                                NavButtonsView(playerDataManager: playerDataManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager)
-                            }
-                        }
-                    }
-                    .toolbarTitleDisplayMode(.inline)
-            }.tabItem { Label("Favorites", systemImage: "heart.text.square") }
-                
-            PlayerCompareView(vm: playerCompareVM, playerDataManager: playerDataManager)
-                .tabItem { Label("Compare", systemImage: "person.line.dotted.person") }
             
             NavigationView {
-                PlayersView(playerDataManager: playerDataManager, favoritesManager: favoritesManager)
+                FavoritesView()
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
-                            Text("Players").bold().foregroundStyle(.tertiary)
+                            Text("Following").bold().foregroundStyle(.tertiary)
                         }
                         
                         ToolbarItem(placement: .topBarTrailing) {
                             HStack {
-                                NavButtonsView(playerDataManager: playerDataManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager)
+                                NavButtonsView()
                             }
                         }
                     }
                     .toolbarTitleDisplayMode(.inline)
-                    .searchable(text: $searchText)
-                    .searchScopes($searchScope) {
-                        ForEach(searchScopes, id: \.self) { scope in
-                            Text(scope.capitalized)
-                        }
-                    }
-                    .onSubmit(of: .search) {
-                        print(searchText)
-                        searchText = ""
-                    }
-            }.tabItem { Label("Players", systemImage: "person.3") }
+            }.tabItem { Label("Following", systemImage: "heart.text.square") }
                 
+            PlayerCompareView()
+                .tabItem { Label("Compare", systemImage: "person.line.dotted.person") }
+            
+            PlayersView()
+                .tabItem { Label("Players", systemImage: "person.3") }
+            
             NavigationView {
-                TeamsView(apiManager: apiManager, teamDataManager: teamDataManager, playerDataManager: playerDataManager, favoritesManager: favoritesManager)
+                TeamsView()
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Text("Teams").bold().foregroundStyle(.tertiary)
@@ -120,7 +76,7 @@ struct ContentView: View {
                         
                         ToolbarItem(placement: .topBarTrailing) {
                             HStack {
-                                NavButtonsView(playerDataManager: playerDataManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager)
+                                NavButtonsView()
                             }
                         }
                     }
@@ -135,22 +91,17 @@ struct ContentView: View {
                     TabBarLogoView(myTeamID: $faveTeamID)
                 }
             }
-        }.tint(Color(tintColor))
-
-//        .overlay(SplashView(playerDataManager: playerDataManager).onDisappear{print("gone")})
+        }
+        .tint(Color(tintColor))
         .onAppear(perform: {
             faveTeamID = settingsManager.settingsDict["faveTeamID"] as? Int ?? Team.teamData[30].teamID
         })
-        .sheet(isPresented: $playerDataManager.showComparePage) {
-            CompareView(playerDataManager: playerDataManager, sp: playerDataManager.sp ?? Player.demoPlayer).presentationDetents([.medium, .large, .fraction(0.8), .height(400)],selection: $playerDataManager.currentDetent)
-                .presentationBackgroundInteraction(.enabled)
-        }
-        .sheet(isPresented: $playerDataManager.showSettingsPage) {
-            SettingsView(settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager, myTeamID: $faveTeamID)
+        .sheet(isPresented: $settingsManager.showSettingsPage) {
+            SettingsView(myTeamID: $faveTeamID)
         }
     }
 }
 
 #Preview {
-    ContentView(apiManager: DataManager(), teamDataManager: TeamDataManager(), playerDataManager: PlayerDataManager(), settingsManager: SettingsManager(), locationManager: LocationManager(), soundsManager: SoundsManager(), playerCompareVM: PlayerCompareViewModel(), favoritesManager: FavoritesManager())
+    ContentView()
 }

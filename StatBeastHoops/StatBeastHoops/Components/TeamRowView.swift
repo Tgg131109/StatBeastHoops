@@ -8,39 +8,50 @@
 import SwiftUI
 
 struct TeamRowView: View {
-//    @StateObject var apiManager : DataManager
-    @StateObject var teamDataManager : TeamDataManager
-    @StateObject var playerDataManager : PlayerDataManager
-    @StateObject var favoritesManager : FavoritesManager
+    @EnvironmentObject var favoritesManager : FavoritesManager
+    @EnvironmentObject var teamDataManager : TeamDataManager
+    @EnvironmentObject var playerDataManager : PlayerDataManager
     
     var team : Team
     
     var body: some View {
         NavigationLink {
-            TeamDetailView(vm: teamDataManager, playerDataManager: playerDataManager, favoritesManager: favoritesManager, team: team)
+            TeamDetailView(team: team)
         } label: {
-            ZStack {
-                Image(uiImage: team.logo).resizable().rotationEffect(.degrees(-35)).aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: .infinity, maxHeight: 60).overlay(Color(.systemBackground).opacity(0.97).frame(maxWidth: .infinity, maxHeight: 60))
-                    .clipped().padding(.vertical, -10)
-                //                                    .frame(width: 90, height: 40).clipped()
-                HStack {
-                    Text("\(team.divRank ?? 0)").bold()
-                    Text("\(team.leagueRank ?? 0)").bold()
-                    Image(uiImage: team.logo).resizable().aspectRatio(contentMode: .fill).frame(width: 40, height: 30)
-                    VStack(alignment: .leading) {
-                        Text(team.homeTown).font(.caption)
-                        Text(team.teamName).font(.title2).bold().padding(.top, -14)
-                    }
-                    
-                    Spacer()
-                    Text(team.record).bold()
+            HStack {
+                Text("\(team.divRank ?? 0)").bold()
+                
+                Text("\(team.leagueRank ?? 0)").bold()
+                
+                Image(uiImage: team.logo).resizable().aspectRatio(contentMode: .fill).frame(width: 40, height: 30)
+                
+                VStack(alignment: .leading) {
+                    Text(team.homeTown).font(.caption)
+                    Text(team.teamName).font(.title2).bold().padding(.top, -14)
                 }
+                
+                Spacer()
+                
+                Text(team.record).bold()
             }
+            .padding(.vertical, 1)
         }
     }
 }
 
+struct TeamRowBackground: View {
+    var team : Team
+    
+    var body: some View {
+        ZStack {
+            Image(uiImage: team.logo).resizable().rotationEffect(.degrees(-35)).aspectRatio(contentMode: .fill)
+                .frame(maxWidth: .infinity, maxHeight: 80)
+                .clipped().padding(.vertical, -10)
+            
+            Color(.systemBackground).opacity(0.97).frame(maxWidth: .infinity, maxHeight: 80)
+        }
+    }
+}
 #Preview {
-    TeamRowView(teamDataManager: TeamDataManager(), playerDataManager: PlayerDataManager(), favoritesManager: FavoritesManager(), team: Team.teamData[15])
+    TeamRowView(team: Team.teamData[15])
 }

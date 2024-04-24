@@ -9,15 +9,13 @@ import SwiftUI
 import Charts
 
 struct TeamDetailView: View {
-//    @StateObject var apiManager : DataManager
-    @StateObject var vm : TeamDataManager
-    @StateObject var playerDataManager : PlayerDataManager
-    @StateObject var favoritesManager : FavoritesManager
+    @EnvironmentObject var playerDataManager : PlayerDataManager
+    @EnvironmentObject var vm : TeamDataManager
+    @EnvironmentObject var favoritesManager : FavoritesManager
     
-//    @State var isFav = false
     @State private var season = "2023-24"
     @State private var selView = 0
-    @State var r = [Player]()
+    @State private var r = [Player]()
     
     let team: Team
     
@@ -99,7 +97,7 @@ struct TeamDetailView: View {
                 } else if selView == 1 {
                     List{
                         ForEach(r, id: \.playerID) { player in
-                            PlayerRowView(playerDataManager: playerDataManager, favoritesManager: favoritesManager, player: player, rowType: "roster")
+                            PlayerRowView(player: player, rowType: "roster")
                         }
                     }
                     .listStyle(.plain)
@@ -122,5 +120,5 @@ struct TeamDetailView: View {
 }
 
 #Preview {
-    TeamDetailView(vm: TeamDataManager(), playerDataManager: PlayerDataManager(), favoritesManager: FavoritesManager(), team: Team.teamData[15])
+    TeamDetailView(team: Team.teamData[15])
 }

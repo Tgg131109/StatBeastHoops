@@ -8,9 +8,11 @@
 import SwiftUI
 
 struct CompareSetupView: View {
-    @StateObject var vm : PlayerCompareViewModel
+    @EnvironmentObject var vm : PlayerCompareViewModel
+    @EnvironmentObject var playerDataManager : PlayerDataManager
+    @EnvironmentObject var favoritesManager : FavoritesManager
+    
     @StateObject var cvm : CompareViewModel
-    @StateObject var playerDataManager : PlayerDataManager
     
     @State private var season = "2023-24"
     @State private var seasonType = "Regular Season"
@@ -25,7 +27,7 @@ struct CompareSetupView: View {
                         Text("Player 1")
                         
                         NavigationLink {
-                            PlayerSearchView(cvm: cvm, vm: vm, playerDataManager: playerDataManager, p: 1)
+                            PlayerSearchView(cvm: cvm, p: 1)
                         } label: {
                             HStack {
                                 Spacer()
@@ -38,7 +40,7 @@ struct CompareSetupView: View {
                         Text("Player 2")
 
                         NavigationLink {
-                            PlayerSearchView(cvm: cvm, vm: vm, playerDataManager: playerDataManager, p: 2)
+                            PlayerSearchView(cvm: cvm, p: 2)
                         } label: {
                             HStack {
                                 Spacer()
@@ -49,18 +51,43 @@ struct CompareSetupView: View {
                 }//.listRowBackground(Material.regularMaterial)
                 
                 Section("Filters") {
-                    HStack {
-                        Picker("Season", selection: $season) {
-                            ForEach(playerDataManager.seasons, id: \.self) {
-                                Text($0)
-                            }
+                    Picker("Season", selection: $season) {
+                        ForEach(playerDataManager.seasons, id: \.self) {
+                            Text($0)
                         }
                     }
                     
-                    HStack {
-                        Picker("Season Type", selection: $seasonType) {
-                            ForEach(seasonTypes, id: \.self) {
-                                Text($0)
+                    Picker("Season Type", selection: $seasonType) {
+                        ForEach(seasonTypes, id: \.self) {
+                            Text($0)
+                        }
+                    }
+                }
+                
+                Section("Saved Matchups") {
+                    if favoritesManager.getMatchups().isEmpty {
+                        ZStack {
+//                            Image(uiImage: Team.teamData[30].logo).resizable().aspectRatio(contentMode: .fill).opacity(0.2).padding().blur(radius: 3.0)
+                            
+                            Text("No saved matchups").foregroundStyle(.tertiary)
+                        }
+                    } else {
+                        ForEach(favoritesManager.getMatchups(), id: \.self) { player in
+                            NavigationLink {
+//                                PlayerDetailView(playerDataManager: playerDataManager, p: player)
+                            } label: {
+//                                HStack {
+//                                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
+//                                        image
+//                                            .resizable()
+//                                            .scaledToFit()
+//                                    } placeholder: {
+//                                        Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
+//                                    }
+//                                    .frame(width: 40, height: 30, alignment: .bottom)
+//
+//                                    Text("\(player.firstName) \(player.lastName)")
+//                                }
                             }
                         }
                     }
@@ -73,7 +100,7 @@ struct CompareSetupView: View {
                     await cvm.compareStats(p1ID: "\(cvm.p1!.playerID)", p2ID: "\(cvm.p2!.playerID)", criteria: "PTS")
                 }
                 
-                vm.showSetup = false
+                vm.showCompareSetup = false
             }
             .buttonStyle(.borderedProminent)
             .padding()
@@ -84,7 +111,7 @@ struct CompareSetupView: View {
                 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
-                        vm.showSetup = false
+                        vm.showCompareSetup = false
                     }
                 }
             }
@@ -94,5 +121,5 @@ struct CompareSetupView: View {
 }
 
 #Preview {
-    CompareSetupView(vm: PlayerCompareViewModel(), cvm: CompareViewModel(), playerDataManager: PlayerDataManager())
+    CompareSetupView(cvm: CompareViewModel())
 }

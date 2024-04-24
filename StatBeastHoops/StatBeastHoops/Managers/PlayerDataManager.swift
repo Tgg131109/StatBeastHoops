@@ -10,7 +10,7 @@ import SwiftUI
 
 @MainActor
 class PlayerDataManager : ObservableObject {
-    @Published var allPlayers = [Player]()
+//    @Published var allPlayers = [Player]()
     @Published var historicalPlayers = [Player]()
     @Published var inactivePlayers = [Player]()
     @Published var leaders = [Player]()
@@ -21,7 +21,7 @@ class PlayerDataManager : ObservableObject {
     
     
     
-    @Published var searchResults = [Player]()
+//    @Published var searchResults : [Player] = []
     @Published var statCriteria = [String]()
     @Published var statCompare = [StatCompare]()
     @Published var gameStatCompare = [StatSeriesCompare]()
@@ -29,8 +29,9 @@ class PlayerDataManager : ObservableObject {
     @Published var teams = [Team]()
     @Published var seasons = [String]()
     @Published var teamRoster = [Player]()
+//    @Published var rosters = [Int : [Player]]()
     
-    @Published var progress: Double = 0.0
+//    @Published var progress: Double = 0.0
     
     // Stat Compare
     @Published var sp : Player? = nil
@@ -42,9 +43,32 @@ class PlayerDataManager : ObservableObject {
     @Published var showComparePage = false
     @Published var showSettingsPage = false
     
+    @Published var showCharts = false
+    @Published var sortBy = "A-Z"
+//    @State var searchText = ""
+//    @Published var searchScope = "All"
+    
+//    let searchScopes = ["All", "G", "F", "C"]
 //    @Published var playerStats = [PlayerStats]()
+    
+    var allPlayers : [Player] {
+        var ap : [Player] = []
+        
+        for team in Team.teamData {
+            if let roster = team.roster {
+                ap.append(contentsOf: roster)
+            }
+        }
+        
+        ap = ap.sorted { $0.lastName < $1.lastName }
+        
+        return ap
+    }
+    
+    let seasonTypes = ["Preseason","Regular Season", "Postseason", "All-Star", "Play In", "In-Season Tournament"]
+    let totalCategories = ["GP", "GS", "MIN", "FGM", "FGA", "FG %", "FG3M", "FG3A", "FG3 %", "FTM", "FTA", "FT %", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TOV", "PF", "PTS"]
     init() {
-        for y in 2002...2024 {
+        for y in 2002...2023 {
             let u = String(y + 1).suffix(2)
             seasons.append("\(y)-\(u)")
         }
@@ -52,11 +76,48 @@ class PlayerDataManager : ObservableObject {
         seasons.reverse()
     }
     
+//    func getSearchResults(searchText: String) {
+//        searchResults.removeAll()
+//        
+////        var allPlayers : [Player] = []
+//        
+//        for team in Team.teamData {
+//            if let roster = team.roster {
+//                searchResults.append(contentsOf: roster)
+//            }
+//        }
+//        
+////        if searchText.isEmpty {
+////            return allPlayers
+////        } else {
+////            return allPlayers.filter { ("\($0.firstName) \($0.lastName)").contains(searchText) }
+////        }
+//        
+//        if !searchText.isEmpty {
+//            searchResults = searchResults.filter { ("\($0.firstName) \($0.lastName)").contains(searchText) }
+//        }
+//        
+//        switch sortBy {
+//        case "A-Z":
+//            break
+//        case "Z-A":
+//            searchResults = searchResults.reversed()
+//        case "Num":
+//            searchResults = searchResults.sorted {
+//                $0.jersey ?? "" < $1.jersey ?? ""
+//            }
+//        default:
+//            break
+//        }
+//        
+//        if searchScope != "All" {
+//            searchResults = searchResults.filter { $0.position!.contains(searchScope) }
+//        }
+//    }
+    
     func getAllPlayers() async {
         // playerindex endpoint (set Active=1 for only current players)
         // This is just player info, no stats.
-        allPlayers.removeAll()
-//        progress = 0.0
         
         // Validate URL.
         guard let validURL = URL(string: "https://stats.nba.com/stats/playerindex?Active=1&AllStar=&College=&Country=&DraftPick=&DraftRound=&DraftYear=&Height=&Historical=1&LeagueID=00&Season=2023-24&TeamID=0&Weight=")
@@ -64,7 +125,6 @@ class PlayerDataManager : ObservableObject {
         
         var urlRequest = URLRequest(url: validURL)
         urlRequest.setValue("https://stats.nba.com",forHTTPHeaderField: "Referer")
-        //        urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
         
         do {
             let (validData, response) = try await URLSession.shared.data(for: urlRequest)
@@ -79,17 +139,6 @@ class PlayerDataManager : ObservableObject {
                 print("JSON object creation failed.")
                 return
             }
-            
-            // Calculate the total size of the response data for progress tracking
-            let totalSize = Float(response.expectedContentLength)
-            var receivedSize: Float = 0.0
-            //            print(response.progress)
-            //
-            //            for try await byte in validData.count {
-            //                        data.append(byte)
-            //                        let progress = Double(data.count) / Double(totalSize)
-            //                        print(progress)
-            //                    }
             
             // Create json Object from downloaded data above and cast as [String: Any].
             if let jsonObj = try JSONSerialization.jsonObject(with: validData, options: .mutableContainers) as? [String: Any] {
@@ -107,13 +156,6 @@ class PlayerDataManager : ObservableObject {
                 }
                 
                 for player in players {
-                    //                        DispatchQueue.main.async {
-                    //                            Update progress
-                    receivedSize += Float(MemoryLayout.size(ofValue: player))
-                    //                        print(receivedSize)
-                    self.progress = Double(receivedSize / totalSize)
-                    //                        print(progress)
-                    //                    }
                     var i = 0
                     var p = [String : Any]()
                     
@@ -124,25 +166,11 @@ class PlayerDataManager : ObservableObject {
                     
                     let newPlayer = Player(playerID: p["PERSON_ID"] as! Int, firstName: p["PLAYER_FIRST_NAME"] as! String, lastName: p["PLAYER_LAST_NAME"] as! String, rank: 0, teamID: p["TEAM_ID"] as! Int, jersey: p["JERSEY_NUMBER"] as? String, position: p["POSITION"] as? String, height: p["HEIGHT"] as? String, weight: p["WEIGHT"] as? String, college: p["COLLEGE"] as? String, country: p["COUNTRY"] as? String, draftYear: p["DRAFT_YEAR"] as? Int, draftNum: p["DRAFT_NUMBER"] as? Int, draftRound: p["DRAFT_ROUND"] as? Int)
                     
-                    self.allPlayers.append(newPlayer)
-                    
                     if let x = Team.teamData.firstIndex(where: { $0.teamID == newPlayer.teamID }) {
-                        if let i = Team.teamData[x].roster?.firstIndex(where: { $0.playerID == newPlayer.playerID }) {
-                            Team.teamData[x].roster?[i].draftYear = newPlayer.draftYear
-                            Team.teamData[x].roster?[i].draftRound = newPlayer.draftRound
-                            Team.teamData[x].roster?[i].draftNum = newPlayer.draftNum
-                            Team.teamData[x].roster?[i].country = newPlayer.country
-                            
-//                            print("found \(Team.teamData[x].roster?[i].firstName) \(Team.teamData[x].roster?[i].lastName)")
-//                            print("year - \(Team.teamData[x].roster?[i].draftYear) | round - \(Team.teamData[x].roster?[i].draftRound) | number - \(Team.teamData[x].roster?[i].draftNum)")
-//                            print("year - \(p["DRAFT_YEAR"] as? Int)) | round - \(p["DRAFT_ROUND"] as? Int)) | number - \(p["DRAFT_NUMBER"] as? Int)")
-                        } else {
-//                            print("player not found on a team - \(newPlayer.firstName) \(newPlayer.lastName)")
-                            self.inactivePlayers.append(newPlayer)
-                        }
+                        Team.teamData[x].roster?.append(newPlayer)
                     } else {
-//                        print("no team found for player - \(newPlayer.firstName) \(newPlayer.lastName)")
-                        self.historicalPlayers.append(newPlayer)
+                        print("no team found for player - \(newPlayer.firstName) \(newPlayer.lastName)")
+//                        self.historicalPlayers.append(newPlayer)
                     }
                 }
             }
@@ -194,7 +222,9 @@ class PlayerDataManager : ObservableObject {
                 }
                 
                 statCriteria = (headers as? [String] ?? [""])
+                
                 let dni = ["PLAYER_ID", "RANK", "PLAYER", "TEAM_ID", "TEAM"]
+                
                 statCriteria.removeAll(where: { dni.contains($0) })
                 
                 for player in players {
@@ -226,91 +256,6 @@ class PlayerDataManager : ObservableObject {
                     }
                     
                     self.leaders.append(newPlayer)
-                }
-            }
-        } catch {
-            return
-        }
-    }
-    
-    func getPlayerStats(pID: Int) async {
-        // playerprofilev2 endpoint
-        // Contains career and season info including highs, pre/post season, and college.
-        
-        // Validate URL.
-        guard let validURL = URL(string: "https://stats.nba.com/stats/playerprofilev2?LeagueID=&PerMode=Totals&PlayerID=\(pID)")
-        else { fatalError("Invalid URL")}
-        
-        var urlRequest = URLRequest(url: validURL)
-        urlRequest.setValue("https://stats.nba.com",forHTTPHeaderField: "Referer")
-
-        do {
-            let (validData, response) = try await URLSession.shared.data(for: urlRequest)
-            
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 // 200 = OK
-            else {
-                DispatchQueue.main.async {
-                    // Present alert on main thread if there is an error with the URL.
-                }
-                
-                print("JSON object creation failed.")
-                return
-            }
-            
-            // Create json Object from downloaded data above and cast as [String: Any].
-            if let jsonObj = try JSONSerialization.jsonObject(with: validData, options: .mutableContainers) as? [String: Any] {
-                guard let data = jsonObj["resultSets"] as? [[String: Any]]
-                else {
-                    print("This isn't working")
-                    return
-                }
-                
-                // Available data sets (15)
-                // SeasonTotalsRegularSeason
-                // CareerTotalsRegularSeason
-                // SeasonTotalsPostSeason
-                // CareerTotalsPostSeason
-                // SeasonTotalsAllStarSeason
-                // CareerTotalsAllStarSeason
-                // SeasonTotalsCollegeSeason
-                // CareerTotalsCollegeSeason
-                // SeasonTotalsPreseason
-                // CareerTotalsPreseason
-                // SeasonRankingsRegularSeason
-                // SeasonRankingsPostSeason
-                // SeasonHighs
-                // CareerHighs
-                // NextGame
-                
-                for i in data.indices {
-                    if data[i]["name"] as! String == "SeasonTotalsRegularSeason" {
-                        guard let headers = data[i]["headers"] as? [Any],
-                              let statData = data[i]["rowSet"] as? [[Any]]
-                        else {
-                            print("This isn't working")
-                            return
-                        }
-                        
-                        var ps = PlayerStats(playerID: pID, seasonStats: [:])
-                        
-                        for ss in statData {
-                            var x = 0
-                            var p = [String : Any]()
-                            
-                            for header in headers {
-                                print("\(header) : \(ss[x])")
-                                p[header as! String] = ss[x]
-                                x += 1
-                            }
-                            
-                            let seasonStats = SeasonStats(gp: p["GP"] as? Double, gs: p["GS"] as? Double, min: p["MIN"] as? Double, fgm: p["FGM"] as? Double, fga: p["FGA"] as? Double, fg_pct: p["FG_PCT"] as? Double, fg3m: p["FG3M"] as? Double, fg3a: p["FG3A"] as? Double, fg3_pct: p["FG3_PCT"] as? Double, ftm: p["FTM"] as? Double, fta: p["FTA"] as? Double, ft_pct: p["FT_PCT"] as? Double, oreb: p["OREB"] as? Double, dreb: p["DREB"] as? Double, reb: p["REB"] as? Double, ast: p["AST"] as? Double, stl: p["STL"] as? Double, blk: p["BLK"] as? Double, tov: p["TOV"] as? Double, pf: p["PF"] as? Double, pts: p["PTS"] as? Double)
-                            
-                            ps.seasonStats[p["SEASON_ID"] as! String] = seasonStats
-                        }
-                        
-                        playerStats.append(ps)
-                    }
                 }
             }
         } catch {
@@ -360,15 +305,7 @@ class PlayerDataManager : ObservableObject {
                 
                 print(headers)
                 print(games.count)
-//                for i in data.indices {
-//                    if data[i]["name"] as! String == "SeasonTotalsRegularSeason" {
-//                        guard let headers = data[i]["headers"] as? [Any],
-//                              let gameData = data[i]["rowSet"] as? [[Any]]
-//                        else {
-//                            print("This isn't working")
-//                            return
-//                        }
-                        
+                
                 var pgs = PlayerGameStats(playerID: pID, season: "2023-24", gameStats: [])
                         
                         for game in games {
@@ -649,7 +586,7 @@ class PlayerDataManager : ObservableObject {
 //        task.resume()
 //        return
     }
-    
+
 //    func getPlayerHeadshot(pID: Int, tID: Int) -> Image {
 //        let team = Team.teamData.first(where: { $0.teamID == tID })
 //        var hs =
@@ -679,4 +616,291 @@ class PlayerDataManager : ObservableObject {
 ////            }
 //        }
 //    }
+    
+    // MARK: New player data retrieval setup
+    
+    func getPlayerInfo(pID: Int) async {
+        // [PERSON_ID, FIRST_NAME, LAST_NAME, DISPLAY_FIRST_LAST, DISPLAY_LAST_COMMA_FIRST, DISPLAY_FI_LAST, PLAYER_SLUG, BIRTHDATE, SCHOOL, COUNTRY, LAST_AFFILIATION, HEIGHT, WEIGHT, SEASON_EXP, JERSEY, POSITION, ROSTERSTATUS, GAMES_PLAYED_CURRENT_SEASON_FLAG, TEAM_ID, TEAM_NAME, TEAM_ABBREVIATION, TEAM_CODE, TEAM_CITY, PLAYERCODE, FROM_YEAR, TO_YEAR, DLEAGUE_FLAG, NBA_FLAG, GAMES_PLAYED_FLAG, DRAFT_YEAR, DRAFT_ROUND, DRAFT_NUMBER, GREATEST_75_FLAG]
+        let data = await getData(url: "https://stats.nba.com/stats/commonplayerinfo?LeagueID=&PlayerID=\(pID)")
+        
+        if !data.isEmpty {
+            // Available data sets (3)
+            // AvailableSeasons
+            // CommonPlayerInfo
+            // PlayerHeadlineStats
+            
+            // do something with data in another function.
+            // make this section reusable as well.
+            for i in data.indices {
+                if data[i]["name"] as! String == "CommonPlayerInfo" {
+                    guard let headers = data[i]["headers"] as? [Any],
+                          let dataSets = data[i]["rowSet"] as? [[Any]]
+                    else {
+                        print("This isn't working")
+                        return
+                    }
+                    
+                    for ds in dataSets {
+                        var x = 0
+                        var p = [String : Any]()
+                        
+                        for header in headers {
+//                            print("\(header) : \(ds[x])")
+                            p[header as! String] = ds[x]
+                            x += 1
+                        }
+                        
+                        let tID = p["TEAM_ID"] as! Int
+                        
+                        if let x = Team.teamData.firstIndex(where: { $0.teamID == tID }) {
+                            if let i = Team.teamData[x].roster?.firstIndex(where: { $0.playerID == pID }) {
+                                if let isoDate = p["BIRTHDATE"] as? String {
+                                    
+                                    let dateFormatter = DateFormatter()
+                                    let convertDateFormatter = DateFormatter()
+                                    
+                                    dateFormatter.locale = Locale(identifier: "en_US_POSIX") // set locale to reliable US_POSIX
+                                    dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+                                    
+                                    convertDateFormatter.dateFormat = "MMM dd, yyyy"
+                                    
+                                    let date = dateFormatter.date(from:isoDate)!
+                                    let calendar = Calendar.current
+                                    let components = calendar.dateComponents([.year, .month, .day], from: date)
+                                    let bday = calendar.date(from:components)
+                                    let calcAge = calendar.dateComponents([.year], from: bday!, to: Date())
+                                    let age = calcAge.year
+                                    let birthdate = convertDateFormatter.string(from: date)
+                                    
+                                    Team.teamData[x].roster?[i].birthDate = birthdate
+                                    Team.teamData[x].roster?[i].age = age
+                                }
+                                
+                                if let exp = p["SEASON_EXP"] as? Int {
+                                    Team.teamData[x].roster?[i].experience = "\(exp)"
+                                }
+                            } else {
+                                print("No player found")
+                            }
+                        } else {
+                            print("No team found")
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    func getPlayerStatTotals(player: Player) async {
+        // playerprofilev2 endpoint
+        // Contains career and season info including highs, pre/post season, and college.
+        let pID = player.playerID
+        let data = await getData(url: "https://stats.nba.com/stats/playerprofilev2?LeagueID=&PerMode=Totals&PlayerID=\(pID)")
+        
+        if !data.isEmpty {
+            // Available data sets (15)
+            
+            // CareerTotalsCollegeSeason
+            // ['PLAYER_ID', 'LEAGUE_ID', 'ORGANIZATION_ID', 'GP', 'GS', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS']
+            
+            // SeasonTotalsCollegeSeason
+            // ['PLAYER_ID', 'SEASON_ID', 'LEAGUE_ID', 'ORGANIZATION_ID', 'SCHOOL_NAME', 'PLAYER_AGE', 'GP', 'GS', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS']
+            
+            // Highs don't return any useful data. Will be calculated with getPlayerGameStats.
+            // CareerHighs
+            // SeasonHighs
+            // ['PLAYER_ID', 'GAME_DATE', 'VS_TEAM_ID', 'VS_TEAM_CITY', 'VS_TEAM_NAME', 'VS_TEAM_ABBREVIATION', 'STAT', 'STATS_VALUE', 'STAT_ORDER', 'DATE_EST']
+            
+            // CareerTotalsPreseason
+            // CareerTotalsRegularSeason
+            // CareerTotalsPostSeason
+            // CareerTotalsAllStarSeason
+            // ['PLAYER_ID', 'LEAGUE_ID', 'TEAM_ID', 'GP', 'GS', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS']
+            
+            // SeasonRankingsRegularSeason
+            // SeasonRankingsPostSeason
+            // ['PLAYER_ID', 'SEASON_ID', 'LEAGUE_ID', 'TEAM_ID', 'TEAM_ABBREVIATION', 'PLAYER_AGE', 'GP', 'GS', 'RANK_MIN', 'RANK_FGM', 'RANK_FGA', 'RANK_FG_PCT', 'RANK_FG3M', 'RANK_FG3A', 'RANK_FG3_PCT', 'RANK_FTM', 'RANK_FTA', 'RANK_FT_PCT', 'RANK_OREB', 'RANK_DREB', 'RANK_REB', 'RANK_AST', 'RANK_STL', 'RANK_BLK', 'RANK_TOV', 'RANK_PTS', 'RANK_EFF']
+            
+            // SeasonTotalsPreseason
+            // SeasonTotalsRegularSeason
+            // SeasonTotalsPostSeason
+            // SeasonTotalsAllStarSeason
+            // ['PLAYER_ID', 'SEASON_ID', 'LEAGUE_ID', 'TEAM_ID', 'TEAM_ABBREVIATION', 'PLAYER_AGE', 'GP', 'GS', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS']
+            
+            // NextGame ['GAME_ID', 'GAME_DATE', 'GAME_TIME', 'LOCATION', 'PLAYER_TEAM_ID', 'PLAYER_TEAM_CITY', 'PLAYER_TEAM_NICKNAME', 'PLAYER_TEAM_ABBREVIATION', 'VS_TEAM_ID', 'VS_TEAM_CITY', 'VS_TEAM_NICKNAME', 'VS_TEAM_ABBREVIATION']
+            
+            // Player -> PlayerSeasonStats = [SeasonType(Pre/Regular/Post/AllStar) : [SeasonID(year) : [SeasonStats]]]
+            // Player -> PlayerCareerStats = [SeasonType(Pre/Regular/Post/AllStar) : [CareerStats]]
+            // Player -> SeasonHighs = [Highs]
+            // Player -> CareerHighs = [Highs]
+            
+            var pcs : [PlayerCareerStats] = []
+            var pss : [PlayerSeasonStats] = []
+            
+            let proTotals = ["CareerTotalsPreseason", "CareerTotalsRegularSeason", "CareerTotalsPostSeason", "CareerTotalsAllStarSeason", "SeasonTotalsPreseason", "SeasonTotalsRegularSeason", "SeasonTotalsPostSeason", "SeasonTotalsAllStarSeason"]
+            
+            for i in data.indices {
+                guard let dataType = data[i]["name"] as? String,
+                      let headers = data[i]["headers"] as? [Any],
+                      let statData = data[i]["rowSet"] as? [[Any]]
+                else {
+                    print("this data is fucked")
+                    return
+                }
+                
+                // Match season type string to strings in seasonType array used throughout app.
+                var st = ""
+                
+                if dataType.contains("Preseason") {
+                    st = "Preseason"
+                } else if dataType.contains("RegularSeason") {
+                    st = "Regular Season"
+                } else if dataType.contains("PostSeason") {
+                    st = "Postseason"
+                } else if dataType.contains("AllStarSeason") {
+                    st = "All-Star"
+                }
+                
+                if !pcs.contains(where: { $0.seasonType == st }) {
+                    pcs.append(PlayerCareerStats(seasonType: st, careerStats: []))
+                }
+                
+                if !pss.contains(where: { $0.seasonType == st }) {
+                    pss.append(PlayerSeasonStats(seasonType: st, seasonStats: [:], seasonRankings: [:]))
+                }
+                
+                for ss in statData {
+                    var x = 0
+                    var p = [String : Any]()
+                    
+                    for header in headers {
+//                        print("\(header) : \(ss[x])")
+                        p[header as! String] = ss[x]
+                        x += 1
+                    }
+                    
+                    if proTotals.contains(dataType) {
+                        var statTotals = StatTotals(gp: p["GP"] as! Int, gs: p["GS"] as! Int, min: p["MIN"] as! Int, fgm: p["FGM"] as! Int, fga: p["FGA"] as! Int, fg_pct: p["FG_PCT"] as! Double, fg3m: p["FG3M"] as! Int, fg3a: p["FG3A"] as! Int, fg3_pct: p["FG3_PCT"] as! Double, ftm: p["FTM"] as! Int, fta: p["FTA"] as! Int, ft_pct: p["FT_PCT"] as! Double, oreb: p["OREB"] as! Int, dreb: p["DREB"] as! Int, reb: p["REB"] as! Int, ast: p["AST"] as! Int, stl: p["STL"] as! Int, blk: p["BLK"] as! Int, tov: p["TOV"] as! Int, pf: p["PF"] as! Int, pts: p["PTS"] as! Int)
+                        
+                        if dataType.contains("Career") {
+                            if let i = pcs.firstIndex(where: { $0.seasonType == st }) {
+                                pcs[i].careerStats.append(statTotals)
+                            }
+                        } else {
+                            if let i = pss.firstIndex(where: { $0.seasonType == st }) {
+                                statTotals.age = p["PLAYER_AGE"] as? Int
+                                statTotals.teamID = p["TEAM_ID"] as? Int
+                                pss[i].seasonStats[p["SEASON_ID"] as! String] = statTotals
+                            }
+                        }
+                    } else if dataType.contains("Rankings") {
+                        // ['PLAYER_ID', 'SEASON_ID', 'LEAGUE_ID', 'TEAM_ID', 'TEAM_ABBREVIATION', 'PLAYER_AGE', 'GP', 'GS', 'RANK_MIN', 'RANK_FGM', 'RANK_FGA', 'RANK_FG_PCT', 'RANK_FG3M', 'RANK_FG3A', 'RANK_FG3_PCT', 'RANK_FTM', 'RANK_FTA', 'RANK_FT_PCT', 'RANK_OREB', 'RANK_DREB', 'RANK_REB', 'RANK_AST', 'RANK_STL', 'RANK_BLK', 'RANK_TOV', 'RANK_PTS', 'RANK_EFF']
+                        let statRankings = Rankings(gp: p["GP"] as! String, gs: p["GS"] as! String, min: p["RANK_MIN"] as? Int, fgm: p["RANK_FGM"] as? Int, fga: p["RANK_FGA"] as? Int, fg_pct: p["RANK_FG_PCT"] as? Int, fg3m: p["RANK_FG3M"] as? Int, fg3a: p["RANK_FG3A"] as? Int, fg3_pct: p["RANK_FG3_PCT"] as? Int, ftm: p["RANK_FTM"] as? Int, fta: p["RANK_FTA"] as? Int, ft_pct: p["RANK_FT_PCT"] as? Int, oreb: p["RANK_OREB"] as? Int, dreb: p["RANK_DREB"] as? Int, reb: p["RANK_REB"] as? Int, ast: p["RANK_AST"] as? Int, stl: p["RANK_STL"] as? Int, blk: p["RANK_BLK"] as? Int, tov: p["RANK_TOV"] as? Int, pts: p["RANK_PTS"] as? Int, eff: p["RANK_EFF"] as? Int)
+                        
+                        if let i = pss.firstIndex(where: { $0.seasonType == st }) {
+                            pss[i].seasonRankings[p["SEASON_ID"] as! String] = statRankings
+                        }
+                    }
+                }
+            }
+//            let p = player.team.roster?.first(where: { $0.playerID == pID })
+//            print("\(p?.seasonStats?.count) | \(p?.seasonStats?[0].seasonStats.count) \(p?.seasonStats?[1].seasonStats.count) \(p?.seasonStats?[2].seasonStats.count) \(p?.seasonStats?[3].seasonStats.count)")
+//            print("\(p?.careerStats?.count) | \(p?.careerStats?[0].careerStats.count) \(p?.careerStats?[1].careerStats.count) \(p?.careerStats?[2].careerStats.count) \(p?.careerStats?[3].careerStats.count)")
+            
+            // Add stats to player object.
+            if let h = Team.teamData.firstIndex(where: { $0.teamID == player.teamID }) {
+                if let j = Team.teamData[h].roster?.firstIndex(where: { $0.playerID == pID }) {
+                    Team.teamData[h].roster?[j].seasonStats = pss
+                    Team.teamData[h].roster?[j].careerStats = pcs
+                }
+            }
+        }
+    }
+    
+    func getPlayerGameStats(pID: Int, season: String) async -> [GameStats] {
+        // playergamelogs endpoint
+        // Provides the same data as the playergamelog (no s) endpoint with rankings
+        
+        // [SEASON_YEAR, PLAYER_ID, PLAYER_NAME, NICKNAME, TEAM_ID, TEAM_ABBREVIATION, TEAM_NAME, GAME_ID, GAME_DATE, MATCHUP, WL, MIN, FGM, FGA, FG_PCT, FG3M, FG3A, FG3_PCT, FTM, FTA, FT_PCT, OREB, DREB, REB, AST, TOV, STL, BLK, BLKA, PF, PFD, PTS, PLUS_MINUS, NBA_FANTASY_PTS, DD2, TD3, WNBA_FANTASY_PTS, GP_RANK, W_RANK, L_RANK, W_PCT_RANK, MIN_RANK, FGM_RANK, FGA_RANK, FG_PCT_RANK, FG3M_RANK, FG3A_RANK, FG3_PCT_RANK, FTM_RANK, FTA_RANK, FT_PCT_RANK, OREB_RANK, DREB_RANK, REB_RANK, AST_RANK, TOV_RANK, STL_RANK, BLK_RANK, BLKA_RANK, PF_RANK, PFD_RANK, PTS_RANK, PLUS_MINUS_RANK, NBA_FANTASY_PTS_RANK, DD2_RANK, TD3_RANK, WNBA_FANTASY_PTS_RANK, AVAILABLE_FLAG]
+        let data = await getData(url: "https://stats.nba.com/stats/playergamelogs?DateFrom=&DateTo=&GameSegment=&LastNGames=&LeagueID=&Location=&MeasureType=&Month=&OppTeamID=&Outcome=&PORound=&PerMode=&Period=&PlayerID=\(pID)&Season=\(season)&SeasonSegment=&SeasonType=&ShotClockRange=&TeamID=&VsConference=&VsDivision=")
+        
+        var pgs = PlayerGameStats(playerID: pID, season: "2023-24", gameStats: [])
+        var gameStats : [GameStats] = []
+        
+        if !data.isEmpty {
+            guard let headers = data[0]["headers"] as? [Any],
+                  let games = data[0]["rowSet"] as? [[Any]]
+            else {
+                print("This isn't working")
+                return []
+            }
+            
+//            print(headers)
+//            print(games.count)
+            
+            for game in games {
+                var x = 0
+                var p = [String : Any]()
+                
+                for header in headers {
+//                    print("\(header) : \(game[x])")
+                    p[header as! String] = game[x]
+                    x += 1
+                }
+                
+                let gs = GameStats(gameID: p["GAME_ID"] as! String, gameDate: p["GAME_DATE"] as! String, matchup: p["MATCHUP"] as! String, wl: p["WL"] as! String, min: p["MIN"] as? Double, fgm: p["FGM"] as? Double, fga: p["FGA"] as? Double, fg_pct: p["FG_PCT"] as? Double, fg3m: p["FG3M"] as? Double, fg3a: p["FG3A"] as? Double, fg3_pct: p["FG3_PCT"] as? Double, ftm: p["FTM"] as? Double, fta: p["FTA"] as? Double, ft_pct: p["FT_PCT"] as? Double, oreb: p["OREB"] as? Double, dreb: p["DREB"] as? Double, reb: p["REB"] as? Double, ast: p["AST"] as? Double, stl: p["STL"] as? Double, blk: p["BLK"] as? Double, tov: p["TOV"] as? Double, pf: p["PF"] as? Double, pts: p["PTS"] as? Double)
+                
+//                pgs.gameStats.append(gameStats)
+                gameStats.append(gs)
+            }
+            
+            // We need to check if these season already exist and remove them if so.
+            // We might even do this at the beginning to prevent the call if the data already exists.
+            // We'll have to keep ongoing games in mind if we go with the second approach
+//            playerGameStats.append(pgs)
+        }
+        
+        return gameStats
+    }
+    
+    func getData(url: String) async -> [[String: Any]] {
+        var data : [[String: Any]] = []
+        // Validate URL.
+        guard let validURL = URL(string: url)
+        else { fatalError("Invalid URL")}
+        
+        var urlRequest = URLRequest(url: validURL)
+        urlRequest.setValue("https://stats.nba.com",forHTTPHeaderField: "Referer")
+
+        do {
+            let (validData, response) = try await URLSession.shared.data(for: urlRequest)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 // 200 = OK
+            else {
+                DispatchQueue.main.async {
+                    // Present alert on main thread if there is an error with the URL.
+                }
+                
+                print("JSON object creation failed.")
+                return []
+            }
+            
+            // Create json Object from downloaded data above and cast as [String: Any].
+            if let jsonObj = try JSONSerialization.jsonObject(with: validData, options: .mutableContainers) as? [String: Any] {
+                guard let d = jsonObj["resultSets"] as? [[String: Any]]
+                else {
+                    print("This isn't working")
+                    return []
+                }
+                
+//                print("got data")
+                data = d
+            }
+        } catch {
+            return []
+        }
+        
+        return data
+    }
 }

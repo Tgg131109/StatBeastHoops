@@ -1,5 +1,5 @@
 //
-//  PlayerComareViewModel.swift
+//  PlayerCompareViewModel.swift
 //  StatBeastHoops
 //
 //  Created by Toby Gamble on 4/9/24.
@@ -10,7 +10,7 @@ import SwiftUI
 
 @MainActor
 class PlayerCompareViewModel : ObservableObject {
-    @Published var showSetup = false
+    @Published var showCompareSetup = false
     
     @Published var allPlayers = [Player]()
     @Published var historicalPlayers = [Player]()

@@ -8,10 +8,8 @@
 import SwiftUI
 
 struct FavoritesView: View {
-    @StateObject var vm : FavoritesManager
-//    @StateObject var apiManager : DataManager
-    @StateObject var playerDataManager : PlayerDataManager
-    @StateObject var teamDataManager : TeamDataManager
+    @EnvironmentObject var vm : FavoritesManager
+    @EnvironmentObject var teamDataManager : TeamDataManager
     
     var body: some View {
 //        NavigationStack {
@@ -19,14 +17,14 @@ struct FavoritesView: View {
                 Section("Players") {
                     if vm.getPlayers().isEmpty {
                         ZStack {
-                            Image(uiImage: Team.teamData[30].logo).resizable().aspectRatio(contentMode: .fill).opacity(0.2).padding().blur(radius: 3.0)
+                            Image(uiImage: Team.teamData[30].logo).resizable().aspectRatio(contentMode: .fill).clipShape(.rect(cornerRadius: 16)).opacity(0.1).padding().blur(radius: 3.0)
                             
                             Text("No saved players")
                         }
                     } else {
                         ForEach(vm.getPlayers(), id: \.playerID) { player in
                             NavigationLink {
-                                PlayerDetailView(playerDataManager: playerDataManager, favoritesManager: vm, p: player)
+                                PlayerDetailView(p: player.team.roster?.first(where: { $0.playerID == player.playerID }) ?? player)
                             } label: {
                                 HStack {
                                     AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
@@ -48,14 +46,14 @@ struct FavoritesView: View {
                 Section("Teams") {
                     if vm.getTeams().isEmpty {
                         ZStack {
-                            Image(uiImage: Team.teamData[30].logo).resizable().aspectRatio(contentMode: .fill).opacity(0.2).padding().blur(radius: 3.0)
+                            Image(uiImage: Team.teamData[30].logo).resizable().aspectRatio(contentMode: .fill).clipShape(.rect(cornerRadius: 16)).opacity(0.1).padding().blur(radius: 3.0)
                             
                             Text("No saved teams")
                         }
                     } else {
                         ForEach(vm.getTeams(), id: \.teamID) { team in
                             NavigationLink {
-                                TeamDetailView(vm: teamDataManager, playerDataManager: playerDataManager, favoritesManager: vm, team: team)
+                                TeamDetailView(team: team)
                             } label: {
                                 HStack {
                                     Image(uiImage: team.logo).resizable().aspectRatio(contentMode: .fill).frame(width: 40, height: 30)
@@ -69,27 +67,14 @@ struct FavoritesView: View {
                 Section("Matchups") {
                     if vm.getMatchups().isEmpty {
                         ZStack {
-                            Image(uiImage: Team.teamData[30].logo).resizable().aspectRatio(contentMode: .fill).opacity(0.2).padding().blur(radius: 3.0)
+                            Image(uiImage: Team.teamData[30].logo).resizable().aspectRatio(contentMode: .fill).clipShape(.rect(cornerRadius: 16)).opacity(0.1).padding().blur(radius: 3.0)
                             
                             Text("No saved matchups")
                         }
                     } else {
                         ForEach(vm.getMatchups(), id: \.self) { player in
                             NavigationLink {
-//                                PlayerDetailView(playerDataManager: playerDataManager, p: player)
                             } label: {
-//                                HStack {
-//                                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
-//                                        image
-//                                            .resizable()
-//                                            .scaledToFit()
-//                                    } placeholder: {
-//                                        Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
-//                                    }
-//                                    .frame(width: 40, height: 30, alignment: .bottom)
-//                                    
-//                                    Text("\(player.firstName) \(player.lastName)")
-//                                }
                             }
                         }
                     }
@@ -101,5 +86,5 @@ struct FavoritesView: View {
 }
 
 #Preview {
-    FavoritesView(vm: FavoritesManager(), playerDataManager: PlayerDataManager(), teamDataManager: TeamDataManager())
+    FavoritesView().environmentObject(PlayerDataManager()).environmentObject(FavoritesManager())
 }

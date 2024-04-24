@@ -81,6 +81,38 @@ struct GameStats : Identifiable {
     var fantasyPts: Double? = -1
     var DD2: Double? = -1
     var TD3: Double? = -1
+    
+    var vsTeamID : Int {
+        var vtID = -1
+        let matchupArr = matchup.components(separatedBy: " ")
+        
+        if let tID = Team.teamData.first(where: { $0.abbr == matchupArr.last })?.teamID {
+            vtID = tID
+        }
+        
+        return vtID
+    }
+    
+    var vsTeam : Team {
+        var vt = Team.teamData[30]
+        let matchupArr = matchup.components(separatedBy: " ")
+        
+        if let t = Team.teamData.first(where: { $0.abbr == matchupArr.last }) {
+            vt = t
+        }
+        
+        return vt
+    }
+    
+    var homeAway : String {
+        let matchupArr = matchup.components(separatedBy: " ")
+        
+        if matchupArr[1] == "@" {
+            return "Away"
+        } else {
+            return "Home"
+        }
+    }
 }
 
 struct PlayerStat {
@@ -128,18 +160,110 @@ struct Stat: Identifiable {
     var value: String
 }
 
-//enum LineChartType: String, CaseIterable, Plottable {
-//    case p1 = "Player 1"
-//    case p2 = "Player 2"
-//    
-//    var color : Color {
-//        switch self {
-//        case .p1:
-//            return Team.teamData.firstIndex(where: { })
-//        }
-//    }
-//}
-//struct PlayerHeadshot {
-//    var playerID: Int
-//    var pic: Image? = nil
-//}
+// MARK: New player stats setup
+// NextGame ['GAME_ID', 'GAME_DATE', 'GAME_TIME', 'LOCATION', 'PLAYER_TEAM_ID', 'PLAYER_TEAM_CITY', 'PLAYER_TEAM_NICKNAME', 'PLAYER_TEAM_ABBREVIATION', 'VS_TEAM_ID', 'VS_TEAM_CITY', 'VS_TEAM_NICKNAME', 'VS_TEAM_ABBREVIATION']
+// SeasonTotals ['PLAYER_ID', 'SEASON_ID', 'LEAGUE_ID', 'TEAM_ID', 'TEAM_ABBREVIATION', 'PLAYER_AGE', 'GP', 'GS', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS']
+// CareerTotals ['PLAYER_ID', 'LEAGUE_ID', 'TEAM_ID', 'GP', 'GS', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS']
+// Player -> PlayerSeasonStats = [SeasonType(Pre/Regular/Post/AllStar) : [SeasonID(year) : [SeasonStats]]]
+// Player -> PlayerCareerStats = [SeasonType(Pre/Regular/Post/AllStar) : [CareerStats]]
+// Player -> SeasonHighs = [Highs]
+// Player -> CareerHighs = [Highs]
+
+struct PlayerSeasonStats: Decodable, Encodable {
+    var seasonType: String
+    var seasonStats: [String : StatTotals]
+//    var seasonHighs: [String : Highs]
+    var seasonRankings: [String : Rankings]
+}
+
+struct PlayerCareerStats: Decodable, Encodable {
+    var seasonType: String
+    var careerStats: [StatTotals]
+//    var careerHighs: [Highs]
+}
+
+struct StatTotals: Decodable, Encodable {
+    var age: Int?
+    var teamID: Int?
+    var gp: Int
+    var gs: Int
+    var min: Int
+    var fgm: Int
+    var fga: Int
+    var fg_pct: Double
+    var fg3m: Int
+    var fg3a: Int
+    var fg3_pct: Double
+    var ftm: Int
+    var fta: Int
+    var ft_pct: Double
+    var oreb: Int
+    var dreb: Int
+    var reb: Int
+    var ast: Int
+    var stl: Int
+    var blk: Int
+    var tov: Int
+    var pf: Int
+    var pts: Int
+    
+    var all: [String] {
+        return ["\(gp)", "\(gs)", "\(min)", "\(fgm)", "\(fga)", String(format: "%.1f", (Double(fg_pct)) * 100), "\(fg3m)", "\(fg3a)", String(format: "%.1f", (Double(fg3_pct)) * 100), "\(ftm)", "\(fta)", String(format: "%.1f", (Double(ft_pct)) * 100), "\(oreb)", "\(dreb)", "\(reb)", "\(ast)", "\(stl)", "\(blk)", "\(tov)", "\(pf)", "\(pts)"]
+    }
+    
+    var avg: [String] {
+        var a : [String] = []
+        let pct = [5, 8, 11] // Indicies for pct stats
+        
+        for i in all.indices {
+            if i < 2 {
+                a.append("-")
+            } else if !pct.contains(i) {
+                a.append(String(format: "%.1f", Double((Double(all[i]) ?? 0)/Double(gp))))
+            } else {
+//                let vm = Int(all[i - 2] ?? 0)
+//                let va = Int(all[i - 1] ?? 0)
+                let v = (Double(a[i - 2]) ?? 0)/(Double(a[i - 1]) ?? 0)
+//                let vp = vm/va
+                a.append(String(format: "%.1f", (Double(v) * 100)))
+//                if i == 5 {
+//                    a.append(String(format: "%.1f", Double((Int(all[3] ?? 0)/Int(all[4] ?? 0)) * 100)))
+//                } else if i == 8 {
+//                    a.append(String(format: "%.1f", Double((Int(all[6] ?? 0)/Int(all[7] ?? 0)) * 100)))
+//                } else {
+//                    a.append(String(format: "%.1f", Double((Int(all[9] ?? 0)/Int(all[10] ?? 0)) * 100)))
+//                }
+            }
+        }
+        
+        return a
+    }
+}
+
+struct Rankings: Decodable, Encodable {
+    var gp: String
+    var gs: String
+    var min: Int?
+    var fgm: Int?
+    var fga: Int?
+    var fg_pct: Int?
+    var fg3m: Int?
+    var fg3a: Int?
+    var fg3_pct: Int?
+    var ftm: Int?
+    var fta: Int?
+    var ft_pct: Int?
+    var oreb: Int?
+    var dreb: Int?
+    var reb: Int?
+    var ast: Int?
+    var stl: Int?
+    var blk: Int?
+    var tov: Int?
+    var pts: Int?
+    var eff: Int?
+    
+    var all: [String] {
+        return ["\(gp)", "\(gs)", "\(min ?? -1)", "\(fgm ?? -1)", "\(fga ?? -1)", "\(fg_pct ?? -1)", "\(fg3m ?? -1)", "\(fg3a ?? -1)", "\(fg3_pct ?? -1)", "\(ftm ?? -1)", "\(fta ?? -1)", "\(ft_pct ?? -1)", "\(oreb ?? -1)", "\(dreb ?? -1)", "\(reb ?? -1)", "\(ast ?? -1)", "\(stl ?? -1)", "\(blk ?? -1)", "\(tov ?? -1)", "\(pts ?? -1)", "\(eff ?? -1)"]
+    }
+}

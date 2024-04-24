@@ -8,25 +8,18 @@
 import SwiftUI
 
 struct HomeView: View {
-    @StateObject var apiManager : DataManager
-    @StateObject var playerDataManager : PlayerDataManager
-    @StateObject var settingsManager : SettingsManager
-    @StateObject var locationManager : LocationManager
-    @StateObject var soundsManager : SoundsManager
-    @StateObject var favoritesManager : FavoritesManager
+    @EnvironmentObject var apiManager : DataManager
+    @EnvironmentObject var playerDataManager : PlayerDataManager
     
-//    @State private var showComparePage: Bool = false
-//    @State private var showSettingsPage: Bool = false
     @State private var searchText = ""
     @State private var criterion = "PTS"
     @State private var searchScope = "Current"
+    
     @State var games = [Game]()
     @State var players = [Player]()
     @State var criteria = [String]()
     @State var leaders = [Player]()
-    
-    @Binding var myTeamID : Int
-    
+
     let teams = Team.teamData
     let searchScopes = ["All", "Players", "Teams"]
 
@@ -44,7 +37,7 @@ struct HomeView: View {
                 List {
                     Section {
                         ForEach(leaders, id: \.playerID) { player in
-                            PlayerRowView(playerDataManager: playerDataManager, favoritesManager: favoritesManager, player: player, rowType: "leaders", criterion: criterion)
+                            PlayerRowView(player: player, rowType: "leaders", criterion: criterion)
                         }
                     } header: {
                         HStack {
@@ -135,85 +128,9 @@ struct HomeView: View {
                 
                 Divider()
             }
-//            .overlay(searchOverlay)
-//            .toolbar {
-//                ToolbarItem(placement: .topBarLeading) {
-//                    Text("StatBeast | Hoops").bold().foregroundStyle(.tertiary)
-//                }
-//                
-//                ToolbarItem(placement: .topBarTrailing) {
-//                    HStack {
-//                        NavButtonsView(playerDataManager: playerDataManager, settingsManager: settingsManager, locationManager: locationManager, soundsManager: soundsManager, myTeamID: $myTeamID)
-//                    }
-//                }
-//            }.toolbarTitleDisplayMode(.inline)
-                
-//        }
-//        .searchable(text: $searchText)
-//        .searchScopes($searchScope) {
-//            ForEach(searchScopes, id: \.self) { scope in
-//                Text(scope.capitalized)
-//            }
-//        }
-//        .onSubmit(of: .search) {
-//            print(searchText)
-//            searchText = ""
-//        }
-//        .sheet(isPresented: $showSettingsPage) {
-//            SettingsView()
-//        }
     }
-    
-//    @ViewBuilder
-//    private var searchOverlay: some View {
-//        if !searchText.isEmpty {
-//            List {
-//                Section(header: HStack {
-//                    Text("Players")
-//                }) {
-//                    ForEach(playerResults, id: \.playerID) { player in
-////                        let team = player.team
-////                        let team = Team.teamData.first(where: { $0.teamID == player.teamID})
-//                        
-//                        NavigationLink {
-//                            PlayerDetailView(playerDataManager: playerDataManager, p: player)
-//                        } label: {
-//                            HStack {
-//                                AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
-//                                    image
-//                                        .resizable()
-//                                        .scaledToFit()
-//                                } placeholder: {
-//                                    Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
-//                                }
-//                                .frame(width: 40, height: 30, alignment: .bottom)
-//                                
-//                                Text("\(player.firstName) \(player.lastName)")
-//                            }
-//                        }
-//                    }.listRowBackground(Color.clear)
-//                }
-//                
-//                Section(header: HStack {
-//                    Text("Teams")
-//                }) {
-//                    ForEach(teamResults, id: \.teamID) { team in
-//                        NavigationLink {
-//                            TeamDetailView(apiManager: apiManager, playerDataManager: playerDataManager, team: team)
-//                        } label: {
-//                            HStack {
-//                                Image(uiImage: team.logo).resizable().aspectRatio(contentMode: .fill).frame(width: 40, height: 30)
-//                                Text("\(team.homeTown) \(team.teamName)")
-//                            }
-//                        }
-//                    }.listRowBackground(Color.clear)
-//                }
-//            }.listStyle(.plain)
-//                .background(.ultraThinMaterial)
-//        }
-//    }
 }
 
 #Preview {
-    HomeView(apiManager: DataManager(), playerDataManager: PlayerDataManager(), settingsManager: SettingsManager(), locationManager: LocationManager(), soundsManager: SoundsManager(), favoritesManager: FavoritesManager(), myTeamID: .constant(Team.teamData[30].teamID))
+    HomeView()
 }

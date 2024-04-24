@@ -6,296 +6,776 @@
 //
 
 import SwiftUI
+import Charts
 //import Foundation
 
 struct PlayerDetailView: View {
-    @StateObject var playerDataManager : PlayerDataManager
-    @StateObject var favoritesManager : FavoritesManager
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     
-//    @State var isFav = false
-    @State var seasons = [String]()
+    @EnvironmentObject var playerDataManager : PlayerDataManager
+    
+    @State private var seasons = [String]()
     @State private var season = "2023-24"
+    @State private var seasonType = "Regular Season"
     @State private var selView = 0
-    @State var seasonStats = SeasonStats()
-    @State var gameStats : [GameStats] = []
+    @State private var dataReady = false
+//    @State private var highsReady = false
+//    @State private var seasonStats = SeasonStats()
+    @State private var seasonStats = [PlayerSeasonStats]()
+    @State private var careerStats = [PlayerCareerStats]()
+    @State private var gameStats : [GameStats] = []
+    @State private var highs : [String] = []
+    @State private var showInfoDrawer = true
+    @State private var showCharts = false
     
-    let p : Player
+    @State var p : Player
     
-    var isFav : Bool {
-        return favoritesManager.contains(p)
+    var team : Team {
+        return p.team
     }
-//    @State private var downloadAmount = 0.0
+    
+    var pc : UIColor {
+        return team.priColor
+    }
+    
+    var selectedStats: [StatTotals] {
+        if let ss = seasonStats.first(where: { $0.seasonType == seasonType })?.seasonStats[season] {
+            return [ss]
+        } else {
+            return []
+        }
+    }
+    
+    var selectedStatsRanked: [Rankings] {
+        if let sr = seasonStats.first(where: { $0.seasonType == seasonType })?.seasonRankings[season] {
+            return [sr]
+        } else {
+            return []
+        }
+    }
     
     var body: some View {
-        let team = p.team
-        let pc = team.priColor
-        
-//        NavigationStack {
+        VStack(spacing: 0) {
+            headerCard
+            
+            headerStatRow
+            
             VStack {
-                ZStack {
-                    Image(uiImage: team.logo).resizable().rotationEffect(.degrees(-35)).aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: .infinity, maxHeight: 250).overlay(Color(.systemBackground).opacity(0.8).frame(maxWidth: .infinity, maxHeight: 250))
-                        .clipped().padding(.trailing, -200).ignoresSafeArea()
+                playerInfoDrawer
+                
+                statCard
+                
+                //                    if selView == 0 {
+                //                        if !gameStats.isEmpty {
+                //                            Table(gameStats) {
+                //                                TableColumn("VS", value: \.matchup)
+                //                                TableColumn("Date", value: \.gameDate)
+                //                                TableColumn("W/L", value: \.wl)
+                //                                TableColumn("MIN") { stat in Text(String(format: "%.1f", stat.min ?? -1)) }
+                //                                TableColumn("PTS") { stat in Text(String(format: "%.1f", stat.pts ?? -1)) }
+                //                                TableColumn("FGM") { stat in Text(String(format: "%.1f", stat.fgm ?? -1)) }
+                //                                TableColumn("FGA") { stat in Text(String(format: "%.1f", stat.fga ?? -1)) }
+                //                                TableColumn("FG%") { stat in Text(String(format: "%.1f", stat.fg_pct ?? -1)) }
+                //                                TableColumn("3PM") { stat in Text(String(format: "%.1f", stat.fg3m ?? -1)) }
+                //                                TableColumn("3PA") { stat in Text(String(format: "%.1f", stat.fg3a ?? -1)) }
+                //                                //                            TableColumn("3P%") { stat in Text(String(format: "%.1f", stat.fg3_pct ?? -1)) }
+                //                                //                            TableColumn("FTM") { stat in Text(String(format: "%.1f", stat.ftm ?? -1)) }
+                //                                //                            TableColumn("FTA") { stat in Text(String(format: "%.1f", stat.fta ?? -1)) }
+                //                                //                            TableColumn("FT%") { stat in Text(String(format: "%.1f", stat.ft_pct ?? -1)) }
+                //                                //                            TableColumn("OREB") { stat in Text(String(format: "%.1f", stat.oreb ?? -1)) }
+                //                                //                            TableColumn("DREB") { stat in Text(String(format: "%.1f", stat.dreb ?? -1)) }
+                //                                //                            TableColumn("REB") { stat in Text(String(format: "%.1f", stat.reb ?? -1)) }
+                //                                //                            TableColumn("AST") { stat in Text(String(format: "%.1f", stat.ast ?? -1)) }
+                //                                //                            TableColumn("STL") { stat in Text(String(format: "%.1f", stat.stl ?? -1)) }
+                //                                //                            TableColumn("BLK") { stat in Text(String(format: "%.1f", stat.blk ?? -1)) }
+                //                                //                            TableColumn("TOV") { stat in Text(String(format: "%.1f", stat.tov ?? -1)) }
+                //                                //                            TableColumn("PF") { stat in Text(String(format: "%.1f", stat.pf ?? -1)) }
+                //                                //                            TableColumn("+/-") { stat in Text(String(format: "%.1f", stat.pm ?? -1)) }
+                //                            }
+                //                        }
+                //                    } else if selView == 1 {
+                //
+                //                    } else {
+                //                        Text(p.lastName)
+                //                    }
+                
+                //                    Spacer()
+                //                }
+            }
+            .toolbar {
+                if !playerDataManager.showCharts {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("", systemImage: "chevron.backward.circle.fill") {
+                            self.presentationMode.wrappedValue.dismiss()
+                        }
+                        .tint(.white.opacity(0.8))
+                    }
                     
+                    ToolbarItem(placement: .principal) {
+                        HStack {
+                            Text(team.homeTown)
+                                .bold()
+                                .padding(.trailing, -10)
+                            
+                            Image(uiImage: team.logo)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 50, alignment: .center)
+                            
+                            Text(team.teamName)
+                                .bold()
+                                .padding(.leading, -10)
+                        }
+                    }
+                    
+                    ToolbarItem(placement: .topBarTrailing) {
+                        FollowButton(p: p, t: nil)
+                    }
+                }
+            }
+            .padding([.horizontal, .bottom])
+            .toolbarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
+        }
+        .overlay(content: {if playerDataManager.showCharts { ChartView(p: p, selectedStats: selectedStats, data: gameStats).background(.ultraThinMaterial) } })
+        .onAppear(perform: {   Task{
+            await getPlayerData()
+            dataReady = true
+        } })
+    }
+    
+    var headerCard: some View {
+        ZStack(alignment: .bottom) {
+            // Background team logo
+            Image(uiImage: team.logo).resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(maxWidth: .infinity, maxHeight: 150)
+                .padding(.trailing, -200)
+                .ignoresSafeArea()
+                .overlay(Color(pc).opacity(0.8))
+            
+            ZStack(alignment: .bottom) {
+                VStack {
                     HStack(alignment: .top) {
+                        // Player info bar
                         VStack(alignment: .leading) {
-                            Button {
-//                                isFav.toggle()
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    if isFav {
-                                        favoritesManager.remove(p)
-                                    } else {
-                                        favoritesManager.add(p)
-                                    }
-                                }
-                            } label: {
-                                Image(systemName: isFav ? "star.fill" : "star")
-                                Text(isFav ? "Favorited" : "Favorite")
-                            }.padding(7).fontWeight(.bold).font(.caption)
-                                .foregroundStyle(isFav ? AnyShapeStyle(.background) : AnyShapeStyle(.secondary))
-                                .background(
-                                    RoundedRectangle(
-                                          cornerRadius: 20,
-                                          style: .circular
-                                      )
-                                      .stroke(isFav ? Color.primary : Color.secondary, lineWidth: 3)
-                                      .fill(isFav ? AnyShapeStyle(Color(pc)) : AnyShapeStyle(.regularMaterial))
-                                ).padding(.vertical, 20)
+                            Text(p.firstName.uppercased())
+                                .padding(.bottom, -10)
                             
-                            Spacer()
-                            
-                            Text(p.firstName).padding(.bottom, -20)
-                            Text(p.lastName).font(.largeTitle).fontWeight(.black).frame(maxWidth: .infinity, alignment: .leading)
+                            Text(p.lastName.uppercased())
+                                .font(.title2)
+                                .fontWeight(.black)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             
                             HStack {
-                                Text(p.position ?? "-").bold()
-                                Divider().frame(maxWidth: 2).overlay(.background).padding(.vertical, -10)
-                                Text("#\(p.jersey ?? "-")").bold()
-                            }.foregroundStyle(.background).padding(.horizontal, 8).padding(.vertical, 2).background(
+                                Text(team.abbr).bold()
+                                    .foregroundStyle(.white)
+                                    .opacity(0.8)
+                                
+                                Divider().frame(maxWidth: 2)
+                                    .overlay(.white)
+                                    .opacity(0.5)
+                                
+                                Text("#\(p.jersey ?? "-")")
+                                    .bold().foregroundStyle(.white)
+                                    .opacity(0.8)
+                                
+                                Divider().frame(maxWidth: 2)
+                                    .overlay(.white)
+                                    .opacity(0.5)
+                                
+                                Text(p.position ?? "-")
+                                    .bold()
+                                    .foregroundStyle(.white)
+                                    .opacity(0.8)
+                            }
+                            .frame(maxHeight: 15)
+                            .font(.footnote)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(
                                 RoundedRectangle(
                                     cornerRadius: 4,
                                     style: .continuous
                                 )
-                                .fill(Color(pc))).padding(.top, -20).padding(.bottom, 20)
-                        }.frame(maxHeight: 150)
-                        
-                        Spacer()
-                    }.padding(.horizontal, 20)
-                    
-                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p.playerID).png")) { image in
-                        image
-                            .resizable()
-                            .scaledToFit()
-                    } placeholder: {
-                        Image(uiImage: team.logo).resizable().aspectRatio(contentMode: .fill).frame(maxWidth: 155, maxHeight: 155, alignment: .trailing)
-                    }.frame(maxWidth: .infinity, maxHeight: 155, alignment: .trailing)
-                }.frame(maxHeight: 150)
-                
-                // Per game stats.
-                HStack(spacing: 0) {
-                    VStack {
-                        let s = String(format: "%.1f", (Double((seasonStats.pts
-                                                               ?? -1)/(seasonStats.gp
-                                                                       ?? -1))))
-                        Text("\(s)").bold()
-                        Text("PPG").font(.caption2)
-                    }.frame(maxWidth: .infinity).foregroundStyle(.background).padding(.vertical, 10).border(.background)
-                    
-//                    Divider()
-                    
-                    VStack {
-                        let s = String(format: "%.1f", (Double((seasonStats.reb
-                                                               ?? -1)/(seasonStats.gp
-                                                                       ?? -1))))
-                        Text("\(s)").bold()
-                        Text("RPG").font(.caption2)
-                    }.frame(maxWidth: .infinity).foregroundStyle(.background).padding(.vertical, 10).border(.background)
-                    
-//                    Divider()
-                    
-                    VStack {
-                        let s = String(format: "%.1f", (Double((seasonStats.ast
-                                                               ?? -1)/(seasonStats.gp
-                                                                       ?? -1))))
-                        Text("\(s)").bold()
-                        Text("APG").font(.caption2)
-                    }.frame(maxWidth: .infinity).foregroundStyle(.background).padding(.vertical, 10).border(.background)
-                    
-//                    Divider()
-                    
-                    VStack {
-                        Text("\(Int(seasonStats.gp ?? 0))").bold()
-                        Text("GP").font(.caption2)
-                    }.frame(maxWidth:  .infinity).foregroundStyle(.background).padding(.vertical, 10).border(.background)
-                }.background(Color(pc)).frame(maxHeight: 30).padding(.top,8)
-                
-                // Player info section
-                HStack(spacing: 0) {
-                    VStack {
-                        Text("\(p.attr)").font(.caption).bold()
-                    }.frame(maxWidth: .infinity).foregroundStyle(Color(pc))
-                    
-                    Divider().frame(maxWidth: 1).overlay(Color(pc)).padding(.vertical, -8)
-                    
-                    VStack {
-                        Text("\(p.draft)").font(.caption).bold().foregroundStyle(Color(pc))
-                        Text("Draft").font(.caption2).foregroundStyle(.tertiary)
-                    }.frame(maxWidth: .infinity)
-                }.frame(maxHeight: 15).padding(.top).padding(.bottom, 4)
-                
-                Divider().frame(maxHeight: 1).overlay(Color(pc)).padding(.horizontal, 4)
-                
-                HStack(spacing: 0) {
-                    VStack {
-                        Text("\(p.birthDate ?? "-")").font(.caption).bold().foregroundStyle(Color(pc))
-                        Text("Birthday").font(.caption2).foregroundStyle(.tertiary)
-                    }.frame(maxWidth: .infinity)
-                    
-                    Divider().frame(maxWidth: 1).overlay(Color(pc)).padding(.vertical, -8)
-                    
-                    VStack {
-                        Text("\(p.country ?? "-1")").font(.caption).bold().foregroundStyle(Color(pc))
-                        Text("Country").font(.caption2).foregroundStyle(.tertiary)
-                    }.frame(maxWidth: .infinity)
-                }.frame(maxHeight: 15).padding(.vertical, 4)
-                
-                Divider().frame(maxHeight: 1).overlay(Color(pc)).padding(.horizontal, 4)
-                
-                HStack(spacing: 0) {
-                    VStack {
-                        Text("\(p.college ?? "-")").font(.caption).bold().foregroundStyle(Color(pc))
-                        Text("School").font(.caption2).foregroundStyle(.tertiary)
-                    }.frame(maxWidth: .infinity)
-                    
-                    Divider().frame(maxWidth: 1).overlay(Color(pc)).padding(.vertical, -8)
-                    
-                    VStack {
-                        Text("\(p.exp ?? "-1")").font(.caption).bold().foregroundStyle(Color(pc))
-                        Text("Experience").font(.caption2).foregroundStyle(.tertiary)
-                    }.frame(maxWidth: .infinity)
-                }.frame(maxHeight: 15).padding(.vertical, 4)
-
-                Divider().frame(maxHeight: 2).overlay(Color(pc))
-                
-//                Picker("Season", selection: $season) {
-//                    ForEach(apiManager.seasons, id: \.self) {
-//                        Text($0)
-//                    }
-//                }
-//                .pickerStyle(.menu)
-//                .background(.regularMaterial).clipShape(.capsule)
-//                .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 20)
-//                .onChange(of: season) {
-////                    apiManager.getChartData(criteria: criteria, pIDs: ["\(p1ID)", "\(p2ID)"])
-//                }
-                
-                Picker("View", selection: $selView) {
-                    Text("Stats").tag(0)
-                    Text("Roster").tag(1)
-                    Text("News").tag(2)
-                }
-                .pickerStyle(.segmented)
-                .padding(.top, 5)
-                .padding(.horizontal, 20)
-                
-                if selView == 0 {
-                    if !gameStats.isEmpty {
-                        Table(gameStats) {
-                            TableColumn("VS", value: \.matchup)
-                            TableColumn("Date", value: \.gameDate)
-                            TableColumn("W/L", value: \.wl)
-                            TableColumn("MIN") { stat in Text(String(format: "%.1f", stat.min ?? -1)) }
-                            TableColumn("PTS") { stat in Text(String(format: "%.1f", stat.pts ?? -1)) }
-                            TableColumn("FGM") { stat in Text(String(format: "%.1f", stat.fgm ?? -1)) }
-                            TableColumn("FGA") { stat in Text(String(format: "%.1f", stat.fga ?? -1)) }
-                            TableColumn("FG%") { stat in Text(String(format: "%.1f", stat.fg_pct ?? -1)) }
-                            TableColumn("3PM") { stat in Text(String(format: "%.1f", stat.fg3m ?? -1)) }
-                            TableColumn("3PA") { stat in Text(String(format: "%.1f", stat.fg3a ?? -1)) }
-//                            TableColumn("3P%") { stat in Text(String(format: "%.1f", stat.fg3_pct ?? -1)) }
-//                            TableColumn("FTM") { stat in Text(String(format: "%.1f", stat.ftm ?? -1)) }
-//                            TableColumn("FTA") { stat in Text(String(format: "%.1f", stat.fta ?? -1)) }
-//                            TableColumn("FT%") { stat in Text(String(format: "%.1f", stat.ft_pct ?? -1)) }
-//                            TableColumn("OREB") { stat in Text(String(format: "%.1f", stat.oreb ?? -1)) }
-//                            TableColumn("DREB") { stat in Text(String(format: "%.1f", stat.dreb ?? -1)) }
-//                            TableColumn("REB") { stat in Text(String(format: "%.1f", stat.reb ?? -1)) }
-//                            TableColumn("AST") { stat in Text(String(format: "%.1f", stat.ast ?? -1)) }
-//                            TableColumn("STL") { stat in Text(String(format: "%.1f", stat.stl ?? -1)) }
-//                            TableColumn("BLK") { stat in Text(String(format: "%.1f", stat.blk ?? -1)) }
-//                            TableColumn("TOV") { stat in Text(String(format: "%.1f", stat.tov ?? -1)) }
-//                            TableColumn("PF") { stat in Text(String(format: "%.1f", stat.pf ?? -1)) }
-//                            TableColumn("+/-") { stat in Text(String(format: "%.1f", stat.pm ?? -1)) }
+                                .fill(Color(pc)))
+                            .padding(.top, -10)
                         }
                     }
-                } else if selView == 1 {
+                    .padding(.horizontal)
+                }
+                .frame(maxWidth: .infinity, maxHeight: 100)
+                .background(.ultraThinMaterial)
+                .overlay(content: { if !dataReady { ShimmerEffectBox() } })
+                .cornerRadius(16, corners: [.topLeft, .topRight])
+                
+                VStack {
+                    // Player image
+                    HStack {
+                        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p.playerID).png")) { image in
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        } placeholder: {
+                            Image(uiImage: team.logo)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(maxWidth: 160)
+                                .opacity(0.4)
+                        }
+                        .padding(.top, 6)
+                        .frame(maxWidth: .infinity, maxHeight: 160, alignment: .trailing)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: 160)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 20)
+        }
+        .frame(maxHeight: 150)
+    }
+    
+    var headerStatRow: some View {
+        HStack(spacing: 0) {
+            if !selectedStats.isEmpty {
+                VStack {
+                    let s = String(format: "%.1f", (Double((selectedStats[0].pts)/(selectedStats[0].gp))))
                     
-                } else {
-                    Text(p.lastName)
+                    Text("\(s)").font(.title3).bold()
+                    Text("PPG").font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.white)
+                .padding(.vertical, 10)
+                .border(.regularMaterial)
+                
+                VStack {
+                    let s = String(format: "%.1f", (Double((selectedStats[0].reb)/(selectedStats[0].gp))))
+                    
+                    Text("\(s)").font(.title3).bold()
+                    Text("RPG").font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.white)
+                .padding(.vertical, 10)
+                .border(.regularMaterial)
+                
+                VStack {
+                    let s = String(format: "%.1f", (Double((selectedStats[0].ast)/(selectedStats[0].gp))))
+                    
+                    Text("\(s)").font(.title3).bold()
+                    Text("APG").font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.white)
+                .padding(.vertical, 10)
+                .border(.regularMaterial)
+                
+                VStack {
+                    Text("\(Int(selectedStats[0].gp))").font(.title3).bold()
+                    Text("GP").font(.caption2)
+                }
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.white)
+                .padding(.vertical, 10)
+                .border(.regularMaterial)
+            } else {
+                Text("No Data Available")
+                    .font(.title3)
+                    .fontWeight(.thin)
+                    .frame(maxWidth: .infinity)
+                    .foregroundStyle(.white)
+                    .padding(.vertical, 10)
+                    .border(.regularMaterial)
+            }
+        }
+        .background(Color(p.team.priColor))
+        .overlay(content: { if !dataReady { ShimmerEffectBox() } })
+    }
+    
+    var playerInfoDrawer: some View {
+        VStack(spacing: 0) {
+            if showInfoDrawer {
+                // Row 1
+                HStack(spacing: 16) {
+                    VStack {
+                        Text("\(p.ht)").font(.callout).bold()
+                        Text("Ht").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                    
+                    Divider()
+                        .frame(maxWidth: 1)
+                        .padding(.vertical, -4)
+                    
+                    VStack {
+                        Text("\(p.wt)").font(.callout).bold()
+                        Text("Wt").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                    
+                    Divider()
+                        .frame(maxWidth: 1)
+                        .padding(.vertical, -4)
+                    
+                    VStack {
+                        Text(p.birthDate!).font(.callout).bold()
+                        Text("Birthday").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                    
+                    Divider()
+                        .frame(maxWidth: 1)
+                        .padding(.vertical, -4)
+                    
+                    VStack {
+                        Text("\(p.age!)").font(.callout).bold()
+                        Text("Age").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                }
+                .frame(maxHeight: 15)
+                .padding(.vertical, 14)
+                
+                Divider()
+                    .frame(maxHeight: 1)
+                    .overlay(Color(pc))
+                    .padding(.horizontal)
+                
+                // Row 2
+                HStack(spacing: 16) {
+                    VStack {
+                        Text("\(p.draft)").font(.callout).bold()
+                        Text("Draft").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                    
+                    Divider()
+                        .frame(maxWidth: 1)
+                        .padding(.vertical, -4)
+                    
+                    VStack {
+                        Text("\(p.exp)").font(.callout).bold()
+                        Text("Experience").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                }
+                .frame(maxHeight: 15)
+                .padding(.vertical, 14)
+                
+                Divider()
+                    .frame(maxHeight: 1)
+                    .overlay(Color(pc))
+                    .padding(.horizontal)
+                
+                // Row 3
+                HStack(spacing: 0) {
+                    VStack {
+                        Text("\(p.college ?? "-")").font(.callout).bold()
+                        Text("School").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    Divider()
+                        .frame(maxWidth: 1)
+                        .padding(.vertical, -4)
+                    
+                    VStack {
+                        Text("\(p.country ?? "-")").font(.callout).bold()
+                        Text("Country").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .frame(maxHeight: 15)
+                .padding(.vertical, 14)
+            }
+            
+            Divider()
+                .padding(.horizontal)
+            
+            Button {
+                withAnimation() {
+                    showInfoDrawer.toggle()
+                }
+            } label: {
+                Image(systemName: showInfoDrawer ? "chevron.compact.up" : "chevron.compact.down")
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity)
+            }
+            .frame(maxWidth: .infinity)
+            .buttonStyle(.borderless)
+            .frame(maxWidth: .infinity)
+            .tint(Color(pc))
+            
+        }
+        .background(.ultraThinMaterial)
+        .overlay(content: { if !dataReady { ShimmerEffectBox() } })
+        .cornerRadius(16, corners: [.bottomLeft, .bottomRight])
+    }
+    
+    var statCard: some View {
+        VStack {
+            HStack {
+                Menu {
+                    Picker("Season", selection: $season) {
+                        ForEach(seasons, id: \.self) {
+                            Text($0)
+                        }
+                    }
+                    .background(.clear)
+                    .onChange(of: season) {
+                        Task {
+                            await getGames()
+                        }
+                    }
+                } label: {
+                    Text(season)
+                        .font(.subheadline)
+                        .tint(.secondary)
                 }
                 
-                Spacer()
+                Divider()
+                    .frame(maxWidth: 1)
                 
-//                Text(p.lastName)
-//                ProgressView("Downloading…", value: downloadAmount, total: 100)
+                Menu {
+                    Picker("Season Type", selection: $seasonType) {
+                        ForEach(playerDataManager.seasonTypes, id: \.self) {
+                            Text($0)
+                        }
+                    }
+                    .background(.clear)
+                    .onChange(of: seasonType) {
+                        
+                    }
+                } label: {
+                    Text(seasonType)
+                        .font(.subheadline)
+                        .tint(.secondary)
+                }
             }
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack {
-                        Text(team.homeTown).bold().padding(.trailing, -10)
-                        Image(uiImage: team.logo).resizable().aspectRatio(contentMode: .fill).frame(width: 50, alignment: .center)
-                        Text(team.teamName).bold().padding(.leading, -10)
+            .frame(maxWidth: .infinity, maxHeight: 16, alignment: .leading)
+            .padding(.horizontal)
+            .padding(.top, 6)
+            
+            Divider()
+                .frame(maxHeight: 2)
+                .padding(.horizontal)
+            
+            HStack {
+                Picker("View", selection: $selView) {
+                    Text("Overall").tag(0)
+                    Text("Per Game").tag(1)
+//                    Text("Charts").tag(2)
+                }
+                .pickerStyle(.segmented)
+                
+                Button {
+                    withAnimation() {
+                        playerDataManager.showCharts.toggle()
+                    }
+                } label: {
+                    Text("Charts")
+                        .font(.system(size: 14)).fontWeight(.semibold)
+                    Image(systemName: "chart.bar.xaxis")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(pc))
+            }
+            .padding(.horizontal)
+            
+            // OK, so three way segcontroller (Overall, Per Game, Charts)
+            // Overall - List(category | avg | total | high | rank). Still need to grab highs and rank.
+            // Per Game - List(team w/image | date | [stats])
+            // Make each item open to game summary detail view (should be similar to Overall list)
+            // Charts - charts obviously. Have options for different chart types.
+            
+            if selView == 0 {
+                HStack {
+                    Text("").frame(maxWidth: .infinity)
+                    Divider().overlay(.ultraThinMaterial)
+                    Text("total").frame(maxWidth: .infinity)
+                    Text("avg").frame(maxWidth: .infinity)
+                    Text("high").frame(maxWidth: .infinity)
+                    Text("rank").frame(maxWidth: .infinity)
+                }
+                .frame(maxHeight: 20)
+                .font(.callout)
+                .fontWeight(.thin)
+                .padding(.horizontal, 20)
+                .padding(.top)
+                
+                List {
+                    // Test headers for lining up header hstack.
+                    //                            HStack {
+                    //                                Text("").frame(maxWidth: .infinity)
+                    //                                Divider().overlay(.ultraThinMaterial)
+                    //                                Text("totals").frame(maxWidth: .infinity)
+                    //                                Text("avg").frame(maxWidth: .infinity)
+                    //                                Text("high").frame(maxWidth: .infinity)
+                    //                                Text("rank").frame(maxWidth: .infinity)
+                    //                            }
+                    //                            .font(.callout)
+                    //                            .bold()
+                    //                            .listRowBackground(Color.clear)
+                    
+                    ForEach(playerDataManager.totalCategories.indices, id: \.self) { i in
+                        HStack {
+                            Text(playerDataManager.totalCategories[i])
+                                .font(.callout)
+                                .fontWeight(.thin)
+                                .italic()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            Divider().overlay(.ultraThinMaterial)
+                            
+                            if !selectedStats.isEmpty {
+                                Text(selectedStats[0].all[i])
+                                    .frame(maxWidth: .infinity)
+                                    .bold()
+                                
+                                Text(selectedStats[0].avg[i])
+                                    .frame(maxWidth: .infinity)
+                                    .bold()
+                                
+                                Text(highs.isEmpty ? "-" : highs[i])
+                                    .frame(maxWidth: .infinity)
+                                    .bold()
+//                                    .overlay(content: { if highs.isEmpty { ShimmerEffectBox() } })
+                                
+                                Text(!selectedStatsRanked.isEmpty ? selectedStatsRanked[0].all[i] : "-")
+                                    .frame(maxWidth: .infinity)
+                                    .bold()
+                            }
+                        }
+                        .listRowBackground(Color.clear)
+                    }
+                }
+                .padding(.horizontal, 0)
+                .scrollIndicators(.hidden)
+                .listStyle(.plain)
+            } else {
+                Text("Stats by game")
+                    .frame(maxHeight: .infinity)
+            }
+        }
+        .frame(maxHeight: .infinity)
+        .overlay(content: { if !dataReady { ShimmerEffectBox() } })
+        .background(.regularMaterial)
+        .clipShape(.rect(cornerRadius: 16))
+         
+    }
+    
+    func getPlayerData() async {
+        await playerDataManager.getPlayerInfo(pID: p.playerID)
+        await playerDataManager.getPlayerStatTotals(player: p)
+        
+        if let player = p.team.roster?.first(where: { $0.playerID == p.playerID }) {
+            p = player
+            seasonStats = p.seasonStats ?? []
+            careerStats = p.careerStats ?? []
+            
+            for i in seasonStats.indices {
+                for k in seasonStats[i].seasonStats.keys {
+                    if !seasons.contains(k) {
+                        seasons.append(k)
                     }
                 }
             }
-            .toolbarTitleDisplayMode(.inline)
-//        }
-        .onAppear(perform: {   Task{
-            await getPlayerStats()
-//            _ = await playerDataManager.getPlayerStats(pID: p.playerID)
-//            r = await apiManager.getTeamRoster(teamID: "\(team.teamID)")
-//            TestFile().download(pID: p.playerID) { progress in
-//                downloadAmount = Double(progress)
-//            }
-        } })
-        
-//        Text("\(p.firstName)")
-//        Text("\(p.lastName)")
-//        Text("\(p.jersey  ?? "-1")")
-//        Text("\(p.position  ?? "UNK")")
-//        Text("\(p.height ?? "0-0")")
-//        Text("\(p.weight ?? "-")")
-//        Text("\(p.birthDate  ?? "-")")
-//        Text("\(p.age  ?? -1)")
-//        
-//        Text("\(p.exp ?? "-")")
-//        Text("\(p.college ?? "-")")
-//        Text("\(p.country  ?? "-")")
-//        Text("\(p.draftYear  ?? "-")")
-//        Text("\(p.draftRound ?? "-")")
-//        Text("\(p.rosterStatus ?? "-")")
-//        Text("\(p.howAcquired  ?? "-")")
-    }
-    
-    func getPlayerStats() async {
-        _ = await playerDataManager.getPlayerStats(pID: p.playerID)
-        _ = await playerDataManager.getPlayerGameStats(pID: p.playerID)
-//        _ = await playerDataManager.testFunc(pID: p.playerID)
-        if let stats = playerDataManager.playerStats.first(where: { $0.playerID == p.playerID }) {
-            for k in stats.seasonStats.keys {
-//                print(k)
-                seasons.append(k)
-            }
             
-            if let ss = stats.seasonStats["2023-24"] {
-                seasonStats =  ss
-            }
+            seasons.sort()
+            seasons.reverse()
+            
+            season = seasons[0]
         }
         
-        if let gs = playerDataManager.playerGameStats.first(where: { $0.playerID == p.playerID && $0.season == season })?.gameStats {
-            gameStats = gs
+        await getGames()
+    }
+    
+    func getGames() async {
+        gameStats = await playerDataManager.getPlayerGameStats(pID: p.playerID, season: season)
+        
+        if !gameStats.isEmpty {
+            let gs = gameStats[0]
+            
+            var h = StatTotals(gp: 0, gs: 0, min: Int(gs.min ?? 0), fgm: Int(gs.fgm ?? 0), fga: Int(gs.fga ?? 0), fg_pct: Double(Int(gs.fg_pct ?? 0)), fg3m: Int(gs.fg3m ?? 0), fg3a: Int(gs.fg3a ?? 0), fg3_pct: Double(Int(gs.fg3_pct ?? 0)), ftm: Int(gs.ftm ?? 0), fta: Int(gs.fta ?? 0), ft_pct: Double(Int(gs.ft_pct ?? 0)), oreb: Int(gs.oreb ?? 0), dreb: Int(gs.dreb ?? 0), reb: Int(gs.reb ?? 0), ast: Int(gs.ast ?? 0), stl: Int(gs.stl ?? 0), blk: Int(gs.blk ?? 0), tov: Int(gs.tov ?? 0), pf: Int(gs.pf ?? 0), pts: Int(gs.pts ?? 0))
+            
+            // Calculate highs
+            for game in gameStats {
+                if Int(game.min ?? 0) > h.min {
+                    h.min = Int(game.min ?? 0)
+                }
+                
+                if Int(game.fgm ?? 0) > h.fgm {
+                    h.fgm = Int(game.fgm ?? 0)
+                }
+                
+                if Int(game.fga ?? 0) > h.fga {
+                    h.fga = Int(game.fga ?? 0)
+                }
+                
+                if Double(game.fg_pct ?? 0) > h.fg_pct {
+                    h.fg_pct = Double(game.fg_pct ?? 0)
+                }
+                
+                if Int(game.fg3m ?? 0) > h.fg3m {
+                    h.fg3m = Int(game.fg3m ?? 0)
+                }
+                
+                if Int(game.fg3a ?? 0) > h.fg3a {
+                    h.fg3a = Int(game.fg3a ?? 0)
+                }
+                
+                if Double(game.fg3_pct ?? 0) > h.fg3_pct {
+                    h.fg3_pct = Double(game.fg3_pct ?? 0)
+                }
+                
+                if Int(game.ftm ?? 0) > h.ftm {
+                    h.ftm = Int(game.ftm ?? 0)
+                }
+                
+                if Int(game.fta ?? 0) > h.fta {
+                    h.fta = Int(game.fta ?? 0)
+                }
+                
+                if Double(game.ft_pct ?? 0) > h.ft_pct {
+                    h.ft_pct = Double(game.ft_pct ?? 0)
+                }
+                
+                if Int(game.oreb ?? 0) > h.oreb {
+                    h.oreb = Int(game.oreb ?? 0)
+                }
+                
+                if Int(game.dreb ?? 0) > h.dreb {
+                    h.dreb = Int(game.dreb ?? 0)
+                }
+                
+                if Int(game.reb ?? 0) > h.reb {
+                    h.reb = Int(game.reb ?? 0)
+                }
+                
+                if Int(game.ast ?? 0) > h.ast {
+                    h.ast = Int(game.ast ?? 0)
+                }
+                
+                if Int(game.stl ?? 0) > h.stl {
+                    h.stl = Int(game.stl ?? 0)
+                }
+                
+                if Int(game.blk ?? 0) > h.blk {
+                    h.blk = Int(game.blk ?? 0)
+                }
+                
+                if Int(game.tov ?? 0) > h.tov {
+                    h.tov = Int(game.tov ?? 0)
+                }
+                
+                if Int(game.pf ?? 0) > h.pf {
+                    h.pf = Int(game.pf ?? 0)
+                }
+                
+                if Int(game.pts ?? 0) > h.pts {
+                    h.pts = Int(game.pts ?? 0)
+                }
+            }
+            
+            highs = ["-", "-", "\(h.min)", "\(h.fgm)", "\(h.fga)", String(format: "%.1f", (Double(h.fg_pct)) * 100), "\(h.fg3m)", "\(h.fg3a)", String(format: "%.1f", (Double(h.fg3_pct)) * 100), "\(h.ftm)", "\(h.fta)", String(format: "%.1f", (Double(h.ft_pct)) * 100), "\(h.oreb)", "\(h.dreb)", "\(h.reb)", "\(h.ast)", "\(h.stl)", "\(h.blk)", "\(h.tov)", "\(h.pf)", "\(h.pts)"]
         }
     }
 }
 
+
+struct FollowButton: View {
+    @EnvironmentObject var favoritesManager : FavoritesManager
+    
+    let p : Player?
+    let t : Team?
+    
+    var isFav : Bool {
+        if p != nil {
+            return favoritesManager.contains(p!)
+        } else {
+            return favoritesManager.contains(t!)
+        }
+    }
+    
+    var pc : UIColor {
+        if p != nil {
+            return p!.team.priColor
+        } else {
+            return t!.priColor
+        }
+    }
+    
+    var body: some View {
+//        Button(isFav ? "Following" : "Follow") {
+//            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+//                if isFav {
+//                    if p != nil {
+//                        favoritesManager.remove(p!)
+//                    } else {
+//                        favoritesManager.remove(t!)
+//                    }
+//                } else {
+//                    if p != nil {
+//                        favoritesManager.add(p!)
+//                    } else {
+//                        favoritesManager.add(t!)
+//                    }
+//                }
+//            }
+//        }
+//        .fontWeight(.bold).font(.caption)
+//        .foregroundStyle(isFav ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+//        .background(
+//            RoundedRectangle(
+//                cornerRadius: 10
+//            )
+//            .stroke(isFav ? Color.primary : Color.secondary, lineWidth: 3)
+//            .fill(isFav ? AnyShapeStyle(Color(pc)) : AnyShapeStyle(.regularMaterial))
+//        )
+//        .buttonStyle(.bordered)
+        
+        Button(isFav ? "Following" : "Follow") {
+            withAnimation {
+                if isFav {
+                    if p != nil {
+                        favoritesManager.remove(p!)
+                    } else {
+                        favoritesManager.remove(t!)
+                    }
+                } else {
+                    if p != nil {
+                        favoritesManager.add(p!)
+                    } else {
+                        favoritesManager.add(t!)
+                    }
+                }
+            }
+        }
+        .font(.system(size: 14))
+        .fontWeight(.semibold)
+        .foregroundStyle(.white)
+        .buttonStyle(.borderedProminent)
+        .tint(isFav ? Color(pc) : .secondary)
+    }
+}
+
+extension View {
+    // Function to add rounded corners to any SwiftUI view
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        // Using the clipShape modifier to apply the rounded corner shape
+        clipShape( RoundedCorner(radius: radius, corners: corners) )
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+    
+    // Creating a UIBezierPath to draw the rounded corner shape
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect,
+                                byRoundingCorners: corners,
+                                cornerRadii: CGSize(width: radius, height: radius))
+        // Converting the UIBezierPath to a SwiftUI Path
+        return Path(path.cgPath)
+    }
+}
+
 #Preview {
-    PlayerDetailView(playerDataManager: PlayerDataManager(), favoritesManager: FavoritesManager(), p: Player.demoPlayer)
+    PlayerDetailView(p: Player.demoPlayer).environmentObject(PlayerDataManager())
 }

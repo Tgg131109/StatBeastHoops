@@ -8,65 +8,33 @@
 import SwiftUI
 
 struct TeamsView: View {
-    @StateObject var apiManager : DataManager // only for getTeams()
-    @StateObject var teamDataManager : TeamDataManager
-    @StateObject var playerDataManager : PlayerDataManager
-    @StateObject var favoritesManager : FavoritesManager
+    @EnvironmentObject var apiManager : DataManager
+    @EnvironmentObject var playerDataManager : PlayerDataManager
+    @EnvironmentObject var teamDataManager : TeamDataManager
+    @EnvironmentObject var favoritesManager : FavoritesManager
     
     @State private var searchText = ""
-    @State var teams = [Team]()
+    @State private var teams = [Team]()
+    
+    var sections = ["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"]
     
     var body: some View {
 //        NavigationStack {
             List {
-                Section(header: HStack { Text("ATLANTIC"); Spacer(); Text("W      L  ").padding(.trailing) }) {
-                    ForEach(teams, id: \.teamID) { team in
-                        if !(team.abbr == "NBA") && team.division == "Atlantic" {
-                            TeamRowView(teamDataManager: teamDataManager, playerDataManager: playerDataManager, favoritesManager: favoritesManager, team: team)
+                ForEach(sections, id: \.self) { section in
+                    Section(header: HStack { Text(section.uppercased()).bold().foregroundStyle(.secondary); Spacer(); Text("W      L  ").padding(.trailing) }) {
+                        ForEach(teams, id: \.teamID) { team in
+                            if !(team.abbr == "NBA") && team.division == section {
+                                TeamRowView(team: team)
+                                    .listRowBackground(TeamRowBackground(team: team))
+                            }
                         }
                     }
                 }
-                
-                Section(header: HStack { Text("CENTRAL"); Spacer(); Text("W      L  ").padding(.trailing) }) {
-                    ForEach(teams, id: \.teamID) { team in
-                        if !(team.abbr == "NBA") && team.division == "Central" {
-                            TeamRowView(teamDataManager: teamDataManager, playerDataManager: playerDataManager, favoritesManager: favoritesManager, team: team)
-                        }
-                    }
-                }
-                
-                Section(header: HStack { Text("SOUTHEAST"); Spacer(); Text("W      L  ").padding(.trailing) }) {
-                    ForEach(teams, id: \.teamID) { team in
-                        if !(team.abbr == "NBA") && team.division == "Southeast" {
-                            TeamRowView(teamDataManager: teamDataManager, playerDataManager: playerDataManager, favoritesManager: favoritesManager, team: team)
-                        }
-                    }
-                }
-                
-                Section(header: HStack { Text("NORTHWEST"); Spacer(); Text("W      L  ").padding(.trailing) }) {
-                    ForEach(teams, id: \.teamID) { team in
-                        if !(team.abbr == "NBA") && team.division == "Northwest" {
-                            TeamRowView(teamDataManager: teamDataManager, playerDataManager: playerDataManager, favoritesManager: favoritesManager, team: team)
-                        }
-                    }
-                }
-                
-                Section(header: HStack { Text("PACIFIC"); Spacer(); Text("W      L  ").padding(.trailing) }) {
-                    ForEach(teams, id: \.teamID) { team in
-                        if !(team.abbr == "NBA") && team.division == "Pacific" {
-                            TeamRowView(teamDataManager: teamDataManager, playerDataManager: playerDataManager, favoritesManager: favoritesManager, team: team)
-                        }
-                    }
-                }
-                
-                Section(header: HStack { Text("SOUTHWEST"); Spacer(); Text("W      L  ").padding(.trailing) }) {
-                    ForEach(teams, id: \.teamID) { team in
-                        if !(team.abbr == "NBA") && team.division == "Southwest" {
-                            TeamRowView(teamDataManager: teamDataManager, playerDataManager: playerDataManager, favoritesManager: favoritesManager, team: team)
-                        }
-                    }
-                }
-            }.listStyle(.plain)
+            }
+            .listSectionSpacing(0)
+            .listStyle(.insetGrouped)
+//            .listSectionSpacing(.compact)
 //            .navigationTitle("Teams")
 //                .toolbarTitleDisplayMode(.inline)
                 .onAppear(perform: {   Task{
@@ -77,5 +45,5 @@ struct TeamsView: View {
 }
 
 #Preview {
-    TeamsView(apiManager: DataManager(), teamDataManager: TeamDataManager(), playerDataManager: PlayerDataManager(), favoritesManager: FavoritesManager())
+    TeamsView()
 }

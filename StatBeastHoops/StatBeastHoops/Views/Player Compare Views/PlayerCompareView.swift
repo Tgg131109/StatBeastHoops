@@ -9,18 +9,16 @@ import SwiftUI
 import Charts
 
 struct PlayerCompareView: View {
-    @StateObject var vm : PlayerCompareViewModel
+    @EnvironmentObject var apiManager : DataManager
+    @EnvironmentObject var vm : PlayerCompareViewModel
+    @EnvironmentObject var playerDataManager : PlayerDataManager
+    @EnvironmentObject var favoritesManager : FavoritesManager
+    
     @StateObject var cvm = CompareViewModel()
-    @StateObject var playerDataManager : PlayerDataManager
-
+    
     @State private var statSetType = 0
-//    @State private var statSet = [StatCompare]()
     @State private var dataFilter = 0
     @State private var criteria = "PTS"
-    
-//    @State var p1 = Player.demoPlayer
-//    @State var p2 = Player.demoPlayer
-//    @State var data = [StatSeriesCompare]()
     
     var data : [StatSeriesCompare] {
         var d = cvm.gameStatCompare
@@ -96,244 +94,14 @@ struct PlayerCompareView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                // Matchup card
-                VStack {
-                    ZStack {
-                        // Player backgrounds
-                        Group {
-                            Image(uiImage: t1.logo)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .scaleEffect(0.5)
-                                .padding(.leading, -200)
-                                .background(.regularMaterial)
-                                .overlay(Color(t1.priColor).opacity(0.8))
-                                .overlay(Image(uiImage: t2.logo)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .scaleEffect(0.5)
-                                    .padding(.trailing, -200)
-                                    .background(.regularMaterial)
-                                    .overlay(Color(t2.priColor).opacity(0.8))
-                                    .clipShape(Triangle()))
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: 120)
-                        .clipped()
-//                        .clipShape(.rect(cornerRadius: 16))
-                        
-                        Text("VS").font(.system(size: 60)).fontWeight(.black).foregroundStyle(.ultraThinMaterial).frame(maxHeight: 100)
-//                            .padding(.top, 20)
-                        
-                        VStack {
-//                            HStack {
-//                                Text("MATCHUP").foregroundStyle(.tertiary).bold()
-//                                
-//                                Spacer()
-//                                
-//                                Button {
-////                                    vm.showSetup = true
-//                                } label: {
-//                                    Text("Save Matchup")
-////                                    Image(systemName: "square.and.arrow.down").foregroundStyle(.tertiary)
-//                                }
-//                                .buttonStyle(.bordered)
-//                            }
-//                            .padding(.horizontal)
-//                            .frame(maxWidth: .infinity, maxHeight: 40)
-//                            .background(.ultraThinMaterial)
-                            
-                            // Player images
-                            HStack {
-                                AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p1ID).png")) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFit()
-                                } placeholder: {
-                                    Image(uiImage: t1.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
-                                }
-                                .padding(.top, 6)
-                                .frame(maxWidth: .infinity, maxHeight: 120, alignment: .leading)
-                                
-                                AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p2ID).png")) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFit()
-                                } placeholder: {
-                                    Image(uiImage: t2.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
-                                }
-                                .padding(.top, 6)
-                                .frame(maxWidth: .infinity, maxHeight: 120, alignment: .trailing)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: 120)
-//                            .clipShape(.rect(cornerRadius: 16))
-                        }
-                    }
-                    
-                    // Player names
-                    HStack {
-                        HStack {
-                            Circle().fill(Color(t1.priColor)).frame(width: 10, height: 10)
-                            Text("\(cvm.p1!.firstName) \(cvm.p1!.lastName)").font(.caption).bold()
-                            Text(cvm.p1!.team.abbr).font(.caption).foregroundStyle(.tertiary)
-                        }.padding(.leading)
-                        
-                        Spacer()
-                        
-                        HStack {
-                            Text(cvm.p2!.team.abbr).font(.caption).foregroundStyle(.tertiary)
-                            Text("\(cvm.p2!.firstName) \(cvm.p2!.lastName)").font(.caption).bold()
-                            Rectangle().fill(Color(t2.priColor)).frame(width: 10, height: 10)
-                        }.padding(.trailing)
-                    }
-                    .padding(.top, 2)
-                    .padding(.bottom, 10)
-                }
-                .background(.regularMaterial)
-                .clipShape(.rect(cornerRadius: 16))
-                .padding(.vertical)
-                
-                // Comparison card
-                let totalStats = ["GP", "W", "L"]
-//                let gp = gamesPlayed
+                matchupCard
                 
                 ScrollView {
-                    VStack {
-                        Picker("Stat Set", selection: $statSetType) {
-                            Text("Head-to-Head").tag(0)
-                            Text("Overall").tag(1)
-                        }
-                        .pickerStyle(.segmented)
-                        .padding([.top, .horizontal])
-                        
-                        Text("2023-24 Regular Season Stats").font(.caption).foregroundStyle(.tertiary)
-                        
-                        if !compareReady {
-                            ProgressView().padding().controlSize(.large)
-                        } else {
-                            List {
-                                ForEach(statSet, id: \.id) { stat in
-                                    ZStack {
-                                        HStack {
-                                            VStack(alignment: .leading) {
-                                                Text(stat.value1)
-                                                    .font(.title2.bold())
-                                                
-                                                if statSetType == 1 && !stat.stat.contains("PCT") && !totalStats.contains(stat.stat) {
-                                                    Text(getPerGameStat(val: stat.value1, i: 0)).font(.caption2)
-                                                }
-                                            }
-                                            
-                                            if statSetType == 0 {
-                                                if let off = cvm.oppOffCourt.first(where: { $0.stat == stat.stat })?.value1 {
-                                                    Text(off).font(.footnote).foregroundStyle(.secondary)
-                                                }
-                                            }
-                                            
-                                            Spacer ()
-                                            
-                                            if statSetType == 0 {
-                                                if let off = cvm.oppOffCourt.first(where: { $0.stat == stat.stat })?.value2 {
-                                                    Text(off).font(.footnote).foregroundStyle(.secondary)
-                                                }
-                                            }
-                                            
-                                            VStack(alignment: .trailing) {
-                                                Text(stat.value2)
-                                                    .font(.title2.bold())
-                                                
-                                                if statSetType == 1 && !stat.stat.contains("PCT") && !totalStats.contains(stat.stat) {
-                                                    Text(getPerGameStat(val: stat.value2, i: 1)).font(.caption2)
-                                                }
-                                            }
-                                        }
-                                        
-                                        Text(getStatStr(stat: stat.stat))
-                                    }
-                                }
-                                .listRowBackground(Color.clear)
-                            }
-                            .scrollIndicators(.hidden)
-                            .listStyle(.plain)
-                            .frame(height: 200)
-                        }
-                        
-//                        if statSetType == 0 {
-                            HStack {
-                                Text(statSetType == 0 ? "opponent on court" : "").font(.caption).bold()
-                                Text(statSetType == 0 ? "opponent off court" : "").font(.caption2).foregroundStyle(.secondary)
-                            }
-                            .padding(.bottom, 6)
-                            .padding(.top, 2)
-//                        } else {
-//                            Text("")
-//                                .padding(.bottom, 6)
-//                                .padding(.top, 2)
-//                        }
-                    }
-                    .background(.regularMaterial)
-                    .clipShape(.rect(cornerRadius: 16))
+                    statsCard
                     
-                    // Chart
-                    VStack {
-                        Picker("Data Period", selection: $dataFilter) {
-                            Text("Last 5").tag(0)
-                            Text("Last 10").tag(1)
-                            Text("Last 15").tag(2)
-                            Text("Season").tag(3)
-                        }
-                        .pickerStyle(.segmented)
-                        .padding()
-                        
-                        if !compareReady {
-                            ProgressView().padding().controlSize(.large)
-                        } else {
-                            ZStack(alignment: .top) {
-                                Chart(data, id: \.id) { dataSeries in
-                                    ForEach(dataSeries.statSeries) { d in
-                                        let i = dataSeries.statSeries.firstIndex(where: { $0.id == d.id })
-                                        
-                                        LineMark(x: .value("Game", i! + 1), y: .value("Stat", d.value))
-                                            .foregroundStyle(dataSeries.color)
-//                                            .interpolationMethod(.catmullRom)
-                                    }
-                                    .symbol(by: .value("Player", dataSeries.id))
-                                }
-                                .chartXScale(domain: 1...getMaxX(data: data))
-                                .chartLegend(.hidden)
-                                .frame(height: 400)
-                                .padding()
-//                                .chartXScale(type: .linear)
-//                                .aspectRatio(1, contentMode: .fill)
-//                                .frame(maxWidth: .infinity, alignment:. top)
-//                                .background(.blue)
-                                
-                                HStack {
-                                    Spacer()
-                                    
-                                    Picker("Criteria", selection: $criteria) {
-                                        ForEach(getCriteria(), id: \.self) {
-                                            Text($0)
-                                        }
-                                    }
-                                    .pickerStyle(.menu)
-                                    .background(.regularMaterial).clipShape(.capsule)
-                                    .onChange(of: criteria) {
-                                        cvm.getChartData(criteria: criteria, pIDs: ["\(p1ID)", "\(p2ID)"])
-                                    }
-                                }.padding(.horizontal, 20)
-                            }
-                        }
-                    }
-                    .background(.regularMaterial)
-                    .clipShape(.rect(cornerRadius: 16))
-                    .padding(.vertical)
+                    chartCard
                     
-                    // Advantage card
-//                    if !compareReady {
-//                        ProgressView().padding().controlSize(.large)
-//                    } else {
-                        winnersCard
-//                    }
+                    winnersCard
                 }
                 .scrollIndicators(.hidden)
             }
@@ -353,7 +121,8 @@ struct PlayerCompareView: View {
                         }
                         
                         Button {
-                            vm.showSetup = true
+                            vm.showCompareSetup = true
+                            statSetType = 0
                         } label: {
                             Image(systemName: "slider.horizontal.3")
                         }
@@ -362,8 +131,8 @@ struct PlayerCompareView: View {
             }
             .toolbarTitleDisplayMode(.inline)
         }
-        .sheet(isPresented: $vm.showSetup) {
-            CompareSetupView(vm: vm, cvm: cvm, playerDataManager: playerDataManager)
+        .sheet(isPresented: $vm.showCompareSetup) {
+            CompareSetupView(cvm: cvm)
         }
         .onAppear(perform: {
             // Comment this entire onAppear section to prevent preview from crashing while developing.
@@ -376,7 +145,245 @@ struct PlayerCompareView: View {
                 await cvm.compareStats(p1ID: "\(cvm.p1!.playerID)", p2ID: "\(cvm.p2!.playerID)", criteria: criteria)
 //                statSet = cvm.oppOnCourt
             }
+            
+//            showSetup = appManager.playerCompareVM.showSetup
         })
+    }
+    
+    var matchupCard: some View {
+        VStack {
+            ZStack {
+                // Player backgrounds
+                Group {
+                    Image(uiImage: t1.logo)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .scaleEffect(0.5)
+                        .padding(.leading, -200)
+                        .background(.regularMaterial)
+                        .overlay(Color(t1.priColor).opacity(0.8))
+                        .overlay(Image(uiImage: t2.logo)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .scaleEffect(0.5)
+                            .padding(.trailing, -200)
+                            .background(.regularMaterial)
+                            .overlay(Color(t2.priColor).opacity(0.8))
+                            .clipShape(Triangle()))
+                }
+                .frame(maxWidth: .infinity, maxHeight: 120)
+                .clipped()
+//                        .clipShape(.rect(cornerRadius: 16))
+                
+                Text("VS").font(.system(size: 60)).fontWeight(.black).foregroundStyle(.ultraThinMaterial).frame(maxHeight: 100)
+//                            .padding(.top, 20)
+                
+                VStack {
+//                            HStack {
+//                                Text("MATCHUP").foregroundStyle(.tertiary).bold()
+//
+//                                Spacer()
+//
+//                                Button {
+////                                    vm.showSetup = true
+//                                } label: {
+//                                    Text("Save Matchup")
+////                                    Image(systemName: "square.and.arrow.down").foregroundStyle(.tertiary)
+//                                }
+//                                .buttonStyle(.bordered)
+//                            }
+//                            .padding(.horizontal)
+//                            .frame(maxWidth: .infinity, maxHeight: 40)
+//                            .background(.ultraThinMaterial)
+                    
+                    // Player images
+                    HStack {
+                        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p1ID).png")) { image in
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        } placeholder: {
+                            Image(uiImage: t1.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
+                        }
+                        .padding(.top, 6)
+                        .frame(maxWidth: .infinity, maxHeight: 120, alignment: .leading)
+                        
+                        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p2ID).png")) { image in
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        } placeholder: {
+                            Image(uiImage: t2.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
+                        }
+                        .padding(.top, 6)
+                        .frame(maxWidth: .infinity, maxHeight: 120, alignment: .trailing)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: 120)
+//                            .clipShape(.rect(cornerRadius: 16))
+                }
+            }
+            
+            // Player names
+            HStack {
+                HStack {
+                    Circle().fill(Color(t1.priColor)).frame(width: 10, height: 10)
+                    Text("\(cvm.p1!.firstName) \(cvm.p1!.lastName)").font(.caption).bold()
+                    Text(cvm.p1!.team.abbr).font(.caption).foregroundStyle(.tertiary)
+                }.padding(.leading)
+                
+                Spacer()
+                
+                HStack {
+                    Text(cvm.p2!.team.abbr).font(.caption).foregroundStyle(.tertiary)
+                    Text("\(cvm.p2!.firstName) \(cvm.p2!.lastName)").font(.caption).bold()
+                    Rectangle().fill(Color(t2.priColor)).frame(width: 10, height: 10)
+                }.padding(.trailing)
+            }
+            .padding(.top, 2)
+            .padding(.bottom, 10)
+        }
+        .overlay(content: { if !compareReady { ShimmerEffectBox() } })
+//                .overlay()
+        .background(.regularMaterial)
+        .clipShape(.rect(cornerRadius: 16))
+        .padding(.top)
+    }
+    
+    var statsCard: some View {
+        VStack {
+            let totalStats = ["GP", "W", "L"]
+            
+            Picker("Stat Set", selection: $statSetType) {
+                Text("Head-to-Head").tag(0)
+                Text("Overall").tag(1)
+            }
+            .pickerStyle(.segmented)
+            .padding([.top, .horizontal])
+            
+            Text("2023-24 Regular Season Stats").font(.caption).foregroundStyle(.tertiary)
+            
+            if !compareReady {
+                ProgressView().padding().controlSize(.large)
+            } else {
+                List {
+                    ForEach(statSet, id: \.id) { stat in
+                        ZStack {
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(stat.value1)
+                                        .font(.title2.bold())
+                                    
+                                    if statSetType == 1 && !stat.stat.contains("PCT") && !totalStats.contains(stat.stat) {
+                                        Text(getPerGameStat(val: stat.value1, i: 0)).font(.caption2)
+                                    }
+                                }
+                                
+                                if statSetType == 0 {
+                                    if let off = cvm.oppOffCourt.first(where: { $0.stat == stat.stat })?.value1 {
+                                        Text(off).font(.footnote).foregroundStyle(.secondary)
+                                    }
+                                }
+                                
+                                Spacer ()
+                                
+                                if statSetType == 0 {
+                                    if let off = cvm.oppOffCourt.first(where: { $0.stat == stat.stat })?.value2 {
+                                        Text(off).font(.footnote).foregroundStyle(.secondary)
+                                    }
+                                }
+                                
+                                VStack(alignment: .trailing) {
+                                    Text(stat.value2)
+                                        .font(.title2.bold())
+                                    
+                                    if statSetType == 1 && !stat.stat.contains("PCT") && !totalStats.contains(stat.stat) {
+                                        Text(getPerGameStat(val: stat.value2, i: 1)).font(.caption2)
+                                    }
+                                }
+                            }
+                            
+                            Text(getStatStr(stat: stat.stat))
+                        }
+                    }
+                    .listRowBackground(Color.clear)
+                }
+                .scrollIndicators(.hidden)
+                .listStyle(.plain)
+                .frame(height: 200)
+            }
+            
+//                        if statSetType == 0 {
+                HStack {
+                    Text(statSetType == 0 ? "opponent on court" : "").font(.caption).bold()
+                    Text(statSetType == 0 ? "opponent off court" : "").font(.caption2).foregroundStyle(.secondary)
+                }
+                .padding(.bottom, 6)
+                .padding(.top, 2)
+//                        } else {
+//                            Text("")
+//                                .padding(.bottom, 6)
+//                                .padding(.top, 2)
+//                        }
+        }
+        .overlay(content: { if !compareReady { ShimmerEffectBox() } })
+        .background(.regularMaterial)
+        .clipShape(.rect(cornerRadius: 16))
+    }
+    
+    var chartCard: some View {
+        VStack {
+            Picker("Data Period", selection: $dataFilter) {
+                Text("Last 5").tag(0)
+                Text("Last 10").tag(1)
+                Text("Last 15").tag(2)
+                Text("Season").tag(3)
+            }
+            .pickerStyle(.segmented)
+            .padding()
+            
+            if !compareReady {
+                ProgressView().padding().controlSize(.large)
+            } else {
+                ZStack(alignment: .top) {
+                    Chart(data, id: \.id) { dataSeries in
+                        ForEach(dataSeries.statSeries) { d in
+                            let i = dataSeries.statSeries.firstIndex(where: { $0.id == d.id })
+                            
+                            LineMark(x: .value("Game", i! + 1), y: .value("Stat", d.value))
+                                .foregroundStyle(dataSeries.color)
+//                                .interpolationMethod(.catmullRom)
+                        }
+                        .symbol(by: .value("Player", dataSeries.id))
+                    }
+                    .chartXScale(domain: 1...getMaxX(data: data))
+                    .chartLegend(.hidden)
+                    .frame(height: 400)
+                    .padding()
+//                    .chartXScale(type: .linear)
+//                    .aspectRatio(1, contentMode: .fill)
+//                    .frame(maxWidth: .infinity, alignment:. top)
+//                    .background(.blue)
+                    
+                    HStack {
+                        Spacer()
+                        
+                        Picker("Criteria", selection: $criteria) {
+                            ForEach(getCriteria(), id: \.self) {
+                                Text($0)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .background(.regularMaterial).clipShape(.capsule)
+                        .onChange(of: criteria) {
+                            cvm.getChartData(criteria: criteria, pIDs: ["\(p1ID)", "\(p2ID)"])
+                        }
+                    }.padding(.horizontal, 20)
+                }
+            }
+        }
+        .overlay(content: { if !compareReady { ShimmerEffectBox() } })
+        .background(.regularMaterial)
+        .clipShape(.rect(cornerRadius: 16))
     }
     
     var winnersCard: some View {
@@ -423,6 +430,8 @@ struct PlayerCompareView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: 80)
+        .overlay(content: { if !compareReady { ShimmerEffectBox() } })
         .background(.regularMaterial)
         .clipShape(.rect(cornerRadius: 16))
         .padding(.bottom)
@@ -618,5 +627,5 @@ struct Triangle: Shape {
 }
 
 #Preview {
-    PlayerCompareView(vm: PlayerCompareViewModel(), playerDataManager: PlayerDataManager())
+    PlayerCompareView()
 }
