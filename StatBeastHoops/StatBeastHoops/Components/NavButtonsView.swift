@@ -10,7 +10,7 @@ import SwiftUI
 struct NavButtonsView: View {
     @EnvironmentObject var settingsManager : SettingsManager
     
-    var viewType : String? = ""
+//    var viewType : String? = ""
     
     var body: some View {
 //        HStack {

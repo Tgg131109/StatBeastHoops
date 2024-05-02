@@ -69,19 +69,7 @@ struct ContentView: View {
             
             NavigationView {
                 TeamsView()
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Text("Teams").bold().foregroundStyle(.tertiary)
-                        }
-                        
-                        ToolbarItem(placement: .topBarTrailing) {
-                            HStack {
-                                NavButtonsView()
-                            }
-                        }
-                    }
-                    .toolbarTitleDisplayMode(.inline)
-                    .searchable(text: $searchText)
+                    
             }
             .navigationViewStyle(.stack)
             .tabItem {
@@ -103,5 +91,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView().environmentObject(SettingsManager())
 }

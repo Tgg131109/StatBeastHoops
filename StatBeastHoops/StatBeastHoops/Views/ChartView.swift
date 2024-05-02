@@ -19,16 +19,22 @@ struct ChartView: View {
     @State private var dataTotals : [StatTotals] = []
     @State private var chartData = [GameStat]()
     @State private var chartSelection: Int?
-    
-    @State private var dataReady = false
+    @State private var selectedStat = "PTS"
     @State private var showStatSelector = false
+    @State private var dataReady = false
+    
+    @State private var isPressing = false
+    @State private var pressing = 0
     @State private var timeFrameFilter = 5
     @State private var headerFilter = 0
     @State private var groupedHeaderFilter = 0
     @State private var splitBy = 0
+    @State private var chartView = 0
     @State private var sortBy = "Game"
+    @State private var sortBy0 = "Game"
     @State private var headerStats = ["PTS","FG_PCT","REB","AST"]
     @State private var statVstat = ["PTS", "REB"]
+    @State private var pctChange = [Double]()
     
     let sortTypes = ["Game", "Vs Team", "Home/Away", "Pre/Post All-Star", "Month"]
     
@@ -55,24 +61,6 @@ struct ChartView: View {
         return pm
     }
     
-    var percentChange: Double {
-        var change = 0.0
-        var chgArr = [Double]()
-        
-        for i in chartData.indices {
-            if i < chartData.count - 1 {
-                let start = chartData[i].val
-                let end = chartData[i + 1].val
-                
-                chgArr.append((end - start)/start * 100)
-            }
-        }
-        
-        change = chgArr.reduce(0.0, +)/Double(chgArr.count)
-        
-        return change
-    }
-    
     var body: some View {
         VStack {
             Picker("Data Period", selection: $timeFrameFilter) {
@@ -89,7 +77,7 @@ struct ChartView: View {
                 }
             })
             
-            switch splitBy {
+            switch chartView {
             case 1:
                 groupedHeader
             case 3:
@@ -108,15 +96,22 @@ struct ChartView: View {
             .padding(.horizontal)
             .onChange(of: splitBy, {
                 withAnimation {
-                    filterData()
+                    if splitBy == 0 && sortBy0 != "" {
+                        sortBy = sortBy0
+                        sortBy0 = ""
+                    }
                     
                     if splitBy == 3 {
+                        sortBy0 = sortBy
                         sortBy = "Home/Away"
                     }
+                    
+                    filterData()
+                    chartView = splitBy
                 }
             })
             
-            switch splitBy {
+            switch chartView {
             case 1:
                 pieChart
             case 2:
@@ -158,86 +153,46 @@ struct ChartView: View {
             }
         }
         .toolbarTitleDisplayMode(.inline)
+        .onChange(of: selectedStat, {
+            withAnimation {
+                updateStats()
+                filterData()
+            }
+        })
         .onAppear(perform: {
             filterData()
         })
+        .sheet(isPresented: $showStatSelector) {
+            StatSelectView(selectedStat: $selectedStat, showStatSelector: $showStatSelector).presentationDetents([.fraction(0.4)])
+        }
     }
     
     var traditionalHeader: some View {
         HStack {
-            VStack(alignment: .leading) {
-                Text(getValueAsStr(criterion: headerStats[0]))
-                    .font(.title2)
-                    .foregroundStyle(headerFilter == 0 ? Color(p.team.priColor) : .primary)
-                    .bold()
-                
-                Text(getStatName(criterion:headerStats[0]))
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .onTapGesture {
-                withAnimation {
-                    headerFilter = 0
-                    getCharts()
+//            let _ = testFunction(status: "show Traditional Header")
+            ForEach(headerStats.indices, id: \.self) { i in
+                VStack(alignment: .leading) {
+                    Text(getValueAsStr(criterion: headerStats[i]))
+                        .font(.title2)
+                        .foregroundStyle(headerFilter == i ? Color(p.team.priColor) : .primary)
+                        .bold()
+                    
+//                    if headerStats[i].contains("PCT") {
+//                        + Text(" %")
+//                            .foregroundStyle(.secondary)
+//                            .bold()
+//                    }
+                    
+                    Text(getStatName(criterion:headerStats[i]))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
                 }
-            }
-            
-            VStack(alignment: .leading) {
-                Text(getValueAsStr(criterion: headerStats[1]))
-                    .font(.title2)
-                    .foregroundStyle(headerFilter == 1 ? Color(p.team.priColor) : .primary)
-                    .bold()
-                
-                + Text(" %")
-                    .foregroundStyle(.secondary)
-                    .bold()
-                
-                Text(getStatName(criterion:headerStats[1]))
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .onTapGesture {
-                withAnimation {
-                    headerFilter = 1
-                    getCharts()
-                }
-            }
-            
-            VStack(alignment: .leading) {
-                Text(getValueAsStr(criterion: headerStats[2]))
-                    .font(.title2)
-                    .foregroundStyle(headerFilter == 2 ? Color(p.team.priColor) : .primary)
-                    .bold()
-                
-                Text(getStatName(criterion:headerStats[2]))
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .onTapGesture {
-                withAnimation {
-                    headerFilter = 2
-                    getCharts()
-                }
-            }
-            
-            VStack(alignment: .leading) {
-                Text(getValueAsStr(criterion: headerStats[3]))
-                    .font(.title2)
-                    .foregroundStyle(headerFilter == 3 ? Color(p.team.priColor) : .primary)
-                    .bold()
-                
-                Text(getStatName(criterion:headerStats[3]))
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .onTapGesture {
-                withAnimation {
-                    headerFilter = 3
-                    getCharts()
+                .frame(maxWidth: .infinity)
+                .onTapGesture {
+                    withAnimation {
+                        headerFilter = i
+                        getCharts()
+                    }
                 }
             }
         }
@@ -246,58 +201,30 @@ struct ChartView: View {
     
     var groupedHeader: some View {
         HStack {
-            VStack(alignment: .leading) {
-                Text(getValueAsStr(criterion: "PTS"))
-                    .font(.title2)
-                    .foregroundStyle(groupedHeaderFilter == 0 ? Color(p.team.priColor) : .primary)
-                    .bold()
-                
-                Text("Scoring")
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .onTapGesture {
-                withAnimation {
-                    groupedHeaderFilter = 0
+//            let _ = testFunction(status: "show Grouped Header")
+            let stats = ["PTS", "REB", "DEF"]
+            let statStr = ["Scoring", "Rebounding", "Defense"]
+            
+            ForEach(stats.indices, id: \.self) { i in
+                VStack(alignment: .leading) {
+                    Text(getValueAsStr(criterion: stats[i]))
+                        .font(.title2)
+                        .foregroundStyle(groupedHeaderFilter == i ? Color(p.team.priColor) : .primary)
+                        .bold()
+                    
+                    Text(statStr[i])
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
                 }
-            }
-            
-            Divider().frame(maxHeight: 44)
-            
-            VStack(alignment: .leading) {
-                Text(getValueAsStr(criterion: "REB"))
-                    .font(.title2)
-                    .foregroundStyle(groupedHeaderFilter == 1 ? Color(p.team.priColor) : .primary)
-                    .bold()
-                
-                Text("Rebounding")
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .onTapGesture {
-                withAnimation {
-                    groupedHeaderFilter = 1
+                .frame(maxWidth: .infinity)
+                .onTapGesture {
+                    withAnimation {
+                        groupedHeaderFilter = i
+                    }
                 }
-            }
-            
-            Divider().frame(maxHeight: 44)
-            
-            VStack(alignment: .leading) {
-                Text(getValueAsStr(criterion: "DEF"))
-                    .font(.title2)
-                    .foregroundStyle(groupedHeaderFilter == 2 ? Color(p.team.priColor) : .primary)
-                    .bold()
                 
-                Text("Defense")
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .onTapGesture {
-                withAnimation {
-                    groupedHeaderFilter = 2
+                if i < stats.count - 1 {
+                    Divider().frame(maxHeight: 44)
                 }
             }
         }
@@ -306,37 +233,35 @@ struct ChartView: View {
     
     var statVstatHeader: some View {
         HStack {
-            VStack(alignment: .leading) {
-                Text(getValueAsStr(criterion: statVstat[0]))
-                    .font(.title2)
-                    .foregroundStyle(.primary)
-                    .bold()
-                
-                Text(getStatName(criterion:statVstat[0]))
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .onTapGesture {
-                withAnimation {
-                    headerFilter = 0
+//            let _ = testFunction(status: "show statVstat Header")
+            ForEach(statVstat.indices, id: \.self) { i in
+                VStack(alignment: .leading) {
+                    Text(getValueAsStr(criterion: statVstat[i]))
+                        .font(.title2)
+                        .foregroundStyle(isPressing && pressing == i + 4 ? Color(p.team.priColor) : .primary)
+                        .bold()
+                    
+                    Text(getStatName(criterion:statVstat[i]))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
                 }
-            }
-            
-            VStack(alignment: .leading) {
-                Text(getValueAsStr(criterion: statVstat[1]))
-                    .font(.title2)
-                    .foregroundStyle(.primary)
-                    .bold()
+                .scaleEffect(isPressing && pressing == i + 4 ? 1.2 : 1)
+                .frame(maxWidth: .infinity)
+                .onLongPressGesture {
+                    withAnimation {
+                        showStatSelector = true
+                        selectedStat = statVstat[i]
+                    }
+                } onPressingChanged: { isPressing in
+                    withAnimation {
+                        self.pressing = i + 4
+                        self.isPressing = isPressing
+                    }
+                }
+                .sensoryFeedback(.selection, trigger: isPressing)
                 
-                Text(getStatName(criterion:statVstat[1]))
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .onTapGesture {
-                withAnimation {
-                    headerFilter = 1
+                if i < statVstat.count - 1 {
+                    Divider().frame(maxHeight: 44)
                 }
             }
         }
@@ -345,6 +270,7 @@ struct ChartView: View {
     
     var barGraph: some View {
         VStack {
+//            let _ = testFunction(status: "show Bar Graph")
             ZStack(alignment: .top) {
 //                if timeFrameFilter != 0 {
                     Chart {
@@ -457,6 +383,7 @@ struct ChartView: View {
     
     var pieChart: some View {
         VStack {
+//            let _ = testFunction(status: "show Pie Chart")
             if !dataTotals.isEmpty {
                 Chart(pieChartData) { pcd in
                     SectorMark(
@@ -664,60 +591,95 @@ struct ChartView: View {
     
     var lineChart: some View {
         VStack {
+//            let _ = testFunction(status: "show Line Chart")
             ZStack(alignment: .bottom) {
                 let linearGradient = LinearGradient(gradient: Gradient(colors: [Color(p.team.priColor).opacity(0.4), Color(p.team.priColor).opacity(0)]), startPoint: .top, endPoint: .bottom)
                 
-                Chart(chartData) {
-                    LineMark(
-                        x: .value("Stat", Int($0.sort) ?? 0),
-                        y: .value("Value", $0.val)
-                    )
-                    .symbol(.circle)
-                    .foregroundStyle(Color(p.team.priColor))
-                    .interpolationMethod(.catmullRom)
-                    
-                    if let chartSelection {
-                        RuleMark(x: .value("Stat", chartSelection))
-                            .foregroundStyle(.gray.opacity(0.5))
-                            .annotation( position: .top, overflowResolution: .init(x: .fit, y: .disabled)) {
-                                VStack {
-                                    Text("\(String(format: "%.1f", (chartData[chartSelection].val))) \(headerStats[headerFilter])")
-                                    Text("\(chartData[chartSelection].matchup)")
-                                    Text("\(chartData[chartSelection].gameDate)")
+                if chartData.count > 4 {
+                    Chart(chartData) {
+                        LineMark(
+                            x: .value("Stat", Int($0.sort) ?? 0),
+                            y: .value("Value", $0.val)
+                        )
+                        .symbol(.circle)
+                        .foregroundStyle(Color(p.team.priColor))
+                        .interpolationMethod(.catmullRom)
+                        
+                        if let chartSelection {
+                            RuleMark(x: .value("Stat", chartSelection))
+                                .foregroundStyle(.gray.opacity(0.5))
+                                .annotation( position: .top, overflowResolution: .init(x: .fit, y: .disabled)) {
+                                    VStack {
+                                        Text("\(String(format: "%.1f", (chartData[chartSelection].val))) \(headerStats[headerFilter])")
+                                        Text("\(chartData[chartSelection].matchup)")
+                                        Text("\(chartData[chartSelection].gameDate)")
+                                    }
+                                    .padding()
+                                    .background(.ultraThinMaterial)
+                                    .clipShape(.rect(cornerRadius: 16))
+                                    .shadow(radius: 10)
                                 }
-                                .padding()
-                                .background(.ultraThinMaterial)
-                                .clipShape(.rect(cornerRadius: 16))
-                                .shadow(radius: 10)
-                            }
+                        }
+                        
+                        AreaMark(
+                            x: .value("Stat", Int($0.sort) ?? 0),
+                            y: .value("Value", $0.val)
+                        )
+                        .interpolationMethod(.catmullRom)
+                        .foregroundStyle(linearGradient)
                     }
+                    .chartXAxis(.hidden)
+                    .chartYAxis(.hidden)
+                    .chartXSelection(value: $chartSelection)
+                    .padding(.vertical)
                     
-                    AreaMark(
-                        x: .value("Stat", Int($0.sort) ?? 0),
-                        y: .value("Value", $0.val)
-                    )
-                    .interpolationMethod(.catmullRom)
-                    .foregroundStyle(linearGradient)
+                    let totalChg = getTotalChange()
+                    
+                    HStack {
+                        Image(systemName: getChangeImage(pc: totalChg))
+                            .foregroundStyle(getChangeTint(pc: totalChg))
+                        
+                        Text("\(String(format: "%.1f", (totalChg))) % change")
+                    }
+                    .bold()
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .clipShape(.rect(cornerRadius: 16))
+                    .shadow(radius: 10)
+                    .padding([.horizontal, .bottom])
                 }
-                .chartXAxis(.hidden)
-                .chartYAxis(.hidden)
-                .chartXSelection(value: $chartSelection)
-                .padding(.vertical)
-                
-                HStack {
-                    Image(systemName: getChangeImage() )
-                    Text("\(String(format: "%.1f", (percentChange))) % change")
-                }
-                .padding()
-                .background(.ultraThinMaterial)
-                .clipShape(.rect(cornerRadius: 16))
-                .shadow(radius: 10)
-                .padding([.horizontal, .bottom])
             }
             
             List {
-                ForEach(filteredData) { game in
-                    Text(game.matchup)
+                ForEach(chartData) { game in
+                    HStack {
+                        HStack {
+                            Text(game.homeAway == "Home" ? "vs" : "at")
+                            
+                            Image(uiImage: game.vsTeam.logo)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 30, height: 30)
+                            
+                            Text(game.vsTeam.abbr)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        Text(headerStats[headerFilter].contains("PCT") ? "\(String(format: "%.1f", (game.val) * 100)) %" : "\(Int(game.val))")
+                            .frame(maxWidth: .infinity)
+                            .bold()
+                        
+                        HStack {
+                            Image(systemName: getChangeImage(pc: game.pctChg ?? 0) )
+                                .foregroundStyle(getChangeTint(pc: game.pctChg ?? 0))
+                            
+                            Text("\(String(format: "%.1f", (game.pctChg ?? 0))) %")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .bold()
+                    }
                 }
             }
             .listStyle(.insetGrouped)
@@ -728,6 +690,7 @@ struct ChartView: View {
     
     var scatterPlot: some View {
         VStack {
+//            let _ = testFunction(status: "show Scatter Plot")
             ZStack(alignment: .top) {
                 Chart(chartData) {
                     PointMark(
@@ -793,6 +756,7 @@ struct ChartView: View {
     }
     
     func filterData() {
+//        let _ = testFunction(status: "Filter Data")
         dataTotals.removeAll()
         filteredData = timeFrameFilter != 0 ? data.suffix(timeFrameFilter) : data
         getCharts()
@@ -825,6 +789,7 @@ struct ChartView: View {
     }
     
     func getCharts() {
+//        let _ = testFunction(status: "Get Charts")
         var cd : [GameStat] = []
         
         let values = getChartY(criterion: headerStats[headerFilter])
@@ -838,7 +803,13 @@ struct ChartView: View {
             }
         } else if splitBy == 2 {
             for i in filteredData.indices {
-                cd.append(GameStat(gameID: filteredData[i].gameID, gameDate: filteredData[i].gameDate, matchup: filteredData[i].matchup, sort: "\(i)", val: values[i], color: Color(filteredData[i].vsTeam.priColor)))
+                var chg = 0.0
+                
+                if i > 0 {
+                    chg = (values[i] - values[i - 1])/values[i - 1] * 100
+                }
+                
+                cd.append(GameStat(gameID: filteredData[i].gameID, gameDate: filteredData[i].gameDate, matchup: filteredData[i].matchup, sort: "\(i)", val: values[i], pctChg: chg, color: Color(filteredData[i].vsTeam.priColor)))
             }
         } else {
             switch sortBy {
@@ -884,6 +855,7 @@ struct ChartView: View {
                 }
             }
         }
+        
         chartData = cd
     }
     
@@ -900,19 +872,19 @@ struct ChartView: View {
                 valueStr = String(player.fgm)
             case "FGA":
                 valueStr = String(player.fga)
-            case "FG_PCT":
+            case "FG_PCT", "FG %":
                 valueStr = String(player.fg_pct)
             case "FG3M":
                 valueStr = String(player.fg3m)
             case "FG3A":
                 valueStr = String(player.fg3a)
-            case "FG3_PCT":
+            case "FG3_PCT", "FG3 %":
                 valueStr = String(player.fg3_pct)
             case "FTM":
                 valueStr = String(player.ftm)
             case "FTA":
                 valueStr = String(player.fta)
-            case "FT_PCT":
+            case "FT_PCT", "FT %":
                 valueStr = String(player.ft_pct)
             case "OREB":
                 valueStr = String(player.oreb)
@@ -1028,11 +1000,19 @@ struct ChartView: View {
             statName = "Blocks"
         case "TOV":
             statName = "Turnovers"
+        case "PTS":
+            statName = "Points"
         default:
             break
         }
         
         return statName
+    }
+    
+    func updateStats() {
+        if splitBy == 3 {
+            statVstat[pressing == 4 ? 0 : 1] = selectedStat
+        }
     }
     
     func getBtnDisabled(btn: String) -> Bool {
@@ -1050,16 +1030,50 @@ struct ChartView: View {
         return disabled
     }
     
-    func getChangeImage() -> String {
+    func getTotalChange() -> Double {
+        var change = 0.0
+        var chgArr = [Double]()
+        
+        for i in chartData.indices {
+            if i < chartData.count - 1 {
+                let start = chartData[i].val
+                let end = chartData[i + 1].val
+                
+                chgArr.append((end - start)/start * 100)
+            }
+        }
+        
+        change = chgArr.reduce(0.0, +)/Double(chgArr.count)
+        
+        return change
+    }
+    
+    func getChangeImage(pc: Double) -> String {
         var img = "chart.line.uptrend.xyaxis"
         
-        if percentChange < 0 {
+        if pc < 0 {
             img = "chart.line.downtrend.xyaxis"
-        } else if percentChange == 0 {
+        } else if pc == 0 {
             img = "chart.line.flattrend.xyaxis"
         }
         
         return img
+    }
+    
+    func getChangeTint(pc: Double) -> Color {
+        var col = Color.green
+        
+        if pc < 0 {
+            col = Color.red
+        } else if pc == 0 {
+            col = Color.primary
+        }
+        
+        return col
+    }
+    
+    func testFunction(status: String) {
+        print(status)
     }
 }
 
@@ -1078,6 +1092,7 @@ struct GameStat : Identifiable {
     var sort: String
     var val: Double
     var val2: Double?
+    var pctChg: Double?
     var color: Color
     
     var vsTeamID : Int {

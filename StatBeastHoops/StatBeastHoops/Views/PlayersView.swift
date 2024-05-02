@@ -14,7 +14,6 @@ struct PlayersView: View {
     @State private var searchText = ""
     @State private var searchScope = "All"
     @State private var isSearching = false
-    @State private var criteria = [String]()
     @State private var sortBy = "A-Z"
     @State private var teamFilterIDs : [Int] = []
     
@@ -83,29 +82,42 @@ struct PlayersView: View {
                     }
                     .listSectionSpacing(0)
                     .listStyle(.plain)
-                    .safeAreaPadding(EdgeInsets(top: 30, leading: 0, bottom: 30, trailing: 0))
+                    .safeAreaPadding(EdgeInsets(top: sortBy != "Team" ? 30 : 0, leading: 0, bottom: 30, trailing: 0))
                     
                     VStack {
-                        HStack {
-                            Text(teamFilterIDs.isEmpty ? "Entire League" : "\(teamFilterIDs.count) Teams Selected")
-                            
-                            if !teamFilterIDs.isEmpty {
-                                Button {
-                                    teamFilterIDs.removeAll()
-                                } label: {
-                                    Image(systemName: "xmark.circle").foregroundStyle(.red)
+                        if sortBy != "Team" {
+                            HStack {
+                                Text(teamFilterIDs.isEmpty ? "Entire League" : "\(teamFilterIDs.count) Teams Selected")
+                                
+                                if !teamFilterIDs.isEmpty {
+                                    Button {
+                                        teamFilterIDs.removeAll()
+                                    } label: {
+                                        Image(systemName: "xmark.circle").foregroundStyle(.red)
+                                    }
                                 }
+                                
+                                Spacer()
+                                
+                                Text(sortBy)
+                                Text(Image(systemName: getSortDir()))
+                                    .padding(.leading, -4)
                             }
-                            
-                            Spacer()
-                            
-                            Text(sortBy)
-                            Text(Image(systemName: getSortDir()))
-                                .padding(.leading, -4)
+                            .padding(.horizontal)
+                            .frame(height: 30)
+                            .background(.regularMaterial)
+                        } else {
+                            HStack {
+                                Spacer()
+                                
+                                Text(sortBy)
+                                Text(Image(systemName: getSortDir()))
+                            }
+                            .font(.caption)
+                            .padding(.horizontal)
+                            .foregroundStyle(.tertiary)
+                            .frame(height: 30)
                         }
-                        .padding(.horizontal)
-                        .frame(height: 30)
-                        .background(.regularMaterial)
                         
                         Spacer()
                         
@@ -127,22 +139,22 @@ struct PlayersView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack {
                         Menu {
-                            Button("Last Name (A-Z)", systemImage: "arrow.up") { sortBy = "A-Z" }
-                            Button("Last Name (Z-A)", systemImage: "arrow.down") { sortBy = "Z-A" }
-                            Button("Jersey Number (0-9)", systemImage: "arrow.up") { sortBy = "0-9" }
-                            Button("Jersey Number (9-0)", systemImage: "arrow.down") { sortBy = "9-0" }
-                            Button("Team", systemImage: "basketball") { sortBy = "Team" }
+                            Button("Last Name (A-Z)", systemImage: "arrow.up") { withAnimation { sortBy = "A-Z" } }
+                            Button("Last Name (Z-A)", systemImage: "arrow.down") { withAnimation { sortBy = "Z-A" } }
+                            Button("Jersey Number (0-9)", systemImage: "arrow.up") { withAnimation { sortBy = "0-9" } }
+                            Button("Jersey Number (9-0)", systemImage: "arrow.down") { withAnimation { sortBy = "9-0" } }
+                            Button("Team", systemImage: "basketball") { withAnimation { sortBy = "Team" } }
                         } label: {
                             Image(systemName: "arrow.up.and.down.text.horizontal")
                         }
                         
-                        NavButtonsView(viewType: "Players")
+                        NavButtonsView()
                     }
                 }
             }
             .toolbarTitleDisplayMode(.inline)
         }
-        .searchable(text: $searchText, isPresented: $isSearching, placement: .navigationBarDrawer(displayMode: .always), prompt: "Find players")
+        .searchable(text: $searchText, isPresented: $isSearching, placement: .navigationBarDrawer(displayMode: .always), prompt: "Find Players")
         .searchScopes($searchScope) {
             ForEach(searchScopes, id: \.self) { scope in
                 Text(scope.capitalized)
@@ -157,9 +169,13 @@ struct PlayersView: View {
                 ForEach(Team.teamData, id: \.teamID) { team in
                     Button {
                         if teamFilterIDs.contains(team.teamID) {
-                            teamFilterIDs.removeAll(where: { $0 == team.teamID })
+                            withAnimation {
+                                teamFilterIDs.removeAll(where: { $0 == team.teamID })
+                            }
                         } else {
-                            teamFilterIDs.append(team.teamID)
+                            withAnimation {
+                                teamFilterIDs.append(team.teamID)
+                            }
                         }
                     } label: {
                         HStack {
@@ -196,5 +212,5 @@ struct PlayersView: View {
 }
 
 #Preview {
-    PlayersView()
+    PlayersView().environmentObject(PlayerDataManager()).environmentObject(FavoritesManager())
 }

@@ -49,8 +49,7 @@ struct HomeView: View {
                                 }
                             }
                             .pickerStyle(.menu).padding(.leading, -15)
-                            .onChange(of: criterion) { Task{
-//                                leaders = await apiManager.getLeaders(cat: criterion)
+                            .onChange(of: criterion) { Task {
                                 await playerDataManager.getLeaders(cat: criterion)
                                 leaders = playerDataManager.leaders
                             } }
@@ -64,7 +63,6 @@ struct HomeView: View {
                     games = await apiManager.getTodaysGames()
                     criteria = playerDataManager.statCriteria
                     players = playerDataManager.allPlayers
-//                    leaders = await apiManager.getLeaders(cat: criterion)
                 } })
                 
                 Divider()
@@ -132,5 +130,5 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView()
+    HomeView().environmentObject(DataManager()).environmentObject(PlayerDataManager())
 }

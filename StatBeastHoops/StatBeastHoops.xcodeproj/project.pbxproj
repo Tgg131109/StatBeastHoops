@@ -12,6 +12,7 @@
 		3A422B5E2BC5AE9F00E018AC /* PlayerCompareViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A422B5D2BC5AE9F00E018AC /* PlayerCompareViewModel.swift */; };
 		3A422B602BC5E19600E018AC /* Team2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A422B5F2BC5E19600E018AC /* Team2.swift */; };
 		3A422B622BC5E1CC00E018AC /* Player2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A422B612BC5E1CC00E018AC /* Player2.swift */; };
+		3A6DDCCB2BDFE21800B82CB5 /* FollowButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A6DDCCA2BDFE21800B82CB5 /* FollowButtonView.swift */; };
 		3ACB6E3C2BA3286A0030C24A /* ColorKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3ACB6E3B2BA3286A0030C24A /* ColorKit */; };
 		3ACB6E3E2BA46DFC0030C24A /* TeamRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ACB6E3D2BA46DFC0030C24A /* TeamRowView.swift */; };
 		3ACB6E402BA4DA8C0030C24A /* PlayerRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ACB6E3F2BA4DA8C0030C24A /* PlayerRowView.swift */; };
@@ -35,6 +36,7 @@
 		3ADCE4622BCD8B1E008E6E18 /* ContentLoaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ADCE4612BCD8B1D008E6E18 /* ContentLoaderView.swift */; };
 		3ADCE4652BCEB2C9008E6E18 /* AppManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ADCE4642BCEB2C9008E6E18 /* AppManager.swift */; };
 		3ADCE4672BD4657A008E6E18 /* ChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ADCE4662BD46579008E6E18 /* ChartView.swift */; };
+		3AE156582BD9CA87001F2EE6 /* StatSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AE156572BD9CA87001F2EE6 /* StatSelectView.swift */; };
 		3AE1DEEC2B9E90F4007AB9F9 /* TeamsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AE1DEEB2B9E90F4007AB9F9 /* TeamsView.swift */; };
 		3AE1DEEE2B9E910D007AB9F9 /* PlayersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AE1DEED2B9E910D007AB9F9 /* PlayersView.swift */; };
 		3AE1DEF02B9EC434007AB9F9 /* Game.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AE1DEEF2B9EC434007AB9F9 /* Game.swift */; };
@@ -91,6 +93,7 @@
 		3A422B5D2BC5AE9F00E018AC /* PlayerCompareViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerCompareViewModel.swift; sourceTree = "<group>"; };
 		3A422B5F2BC5E19600E018AC /* Team2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Team2.swift; sourceTree = "<group>"; };
 		3A422B612BC5E1CC00E018AC /* Player2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player2.swift; sourceTree = "<group>"; };
+		3A6DDCCA2BDFE21800B82CB5 /* FollowButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowButtonView.swift; sourceTree = "<group>"; };
 		3ACB6E3D2BA46DFC0030C24A /* TeamRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamRowView.swift; sourceTree = "<group>"; };
 		3ACB6E3F2BA4DA8C0030C24A /* PlayerRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerRowView.swift; sourceTree = "<group>"; };
 		3ACB6E412BA658A30030C24A /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
@@ -113,6 +116,7 @@
 		3ADCE4612BCD8B1D008E6E18 /* ContentLoaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentLoaderView.swift; sourceTree = "<group>"; };
 		3ADCE4642BCEB2C9008E6E18 /* AppManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppManager.swift; sourceTree = "<group>"; };
 		3ADCE4662BD46579008E6E18 /* ChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartView.swift; sourceTree = "<group>"; };
+		3AE156572BD9CA87001F2EE6 /* StatSelectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatSelectView.swift; sourceTree = "<group>"; };
 		3AE1DEEB2B9E90F4007AB9F9 /* TeamsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamsView.swift; sourceTree = "<group>"; };
 		3AE1DEED2B9E910D007AB9F9 /* PlayersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayersView.swift; sourceTree = "<group>"; };
 		3AE1DEEF2B9EC434007AB9F9 /* Game.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Game.swift; sourceTree = "<group>"; };
@@ -277,6 +281,7 @@
 				3ACB6E3F2BA4DA8C0030C24A /* PlayerRowView.swift */,
 				3ACB6E3D2BA46DFC0030C24A /* TeamRowView.swift */,
 				3AD88D8C2BB503F20040012E /* TabBarLogoView.swift */,
+				3A6DDCCA2BDFE21800B82CB5 /* FollowButtonView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -321,6 +326,7 @@
 				3AE1DEED2B9E910D007AB9F9 /* PlayersView.swift */,
 				3AE1DEF32BA11846007AB9F9 /* PlayerDetailView.swift */,
 				3ADCE4662BD46579008E6E18 /* ChartView.swift */,
+				3AE156572BD9CA87001F2EE6 /* StatSelectView.swift */,
 				3AE1DEEB2B9E90F4007AB9F9 /* TeamsView.swift */,
 				3AE1DEF12B9F9312007AB9F9 /* TeamDetailView.swift */,
 				3AF7653B2B966B6E008C2FA3 /* SettingsView.swift */,
@@ -486,6 +492,7 @@
 				3AF765512B9762B9008C2FA3 /* Team.swift in Sources */,
 				3ACB6E402BA4DA8C0030C24A /* PlayerRowView.swift in Sources */,
 				3AF765472B976271008C2FA3 /* LocationManager.swift in Sources */,
+				3A6DDCCB2BDFE21800B82CB5 /* FollowButtonView.swift in Sources */,
 				3AF7654A2B976271008C2FA3 /* NetworkManager.swift in Sources */,
 				3AE1DEF02B9EC434007AB9F9 /* Game.swift in Sources */,
 				3AF765542B9762B9008C2FA3 /* Conditions.swift in Sources */,
@@ -494,6 +501,7 @@
 				3AF765362B966ADE008C2FA3 /* HomeView.swift in Sources */,
 				3AF7650A2B966108008C2FA3 /* ContentView.swift in Sources */,
 				3ADCE4602BC9D534008E6E18 /* PlayerSearchView.swift in Sources */,
+				3AE156582BD9CA87001F2EE6 /* StatSelectView.swift in Sources */,
 				3A422B622BC5E1CC00E018AC /* Player2.swift in Sources */,
 				3AE1DEF22B9F9313007AB9F9 /* TeamDetailView.swift in Sources */,
 				3A422B5C2BC5A5CE00E018AC /* CompareSetupView.swift in Sources */,

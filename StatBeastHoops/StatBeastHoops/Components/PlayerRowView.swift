@@ -9,7 +9,6 @@ import SwiftUI
 
 struct PlayerRowView: View {
     @EnvironmentObject var playerDataManager : PlayerDataManager
-    @EnvironmentObject var teamDataManager : TeamDataManager
     
     @State private var selectedPlayer : Player?
     
@@ -18,138 +17,89 @@ struct PlayerRowView: View {
     var criterion: String = "PTS"
     
     var body: some View {
-//        let team = getTeam()
-        
         let rn = (rowType == "leaders" ? "\(player.rank ?? 0)" : player.jersey) ?? "-"
         let pc = player.team.priColor
         
-        ZStack(alignment: .center) {
-            NavigationLink {
-//                let pd = rowType == "leaders" ? player.team.roster?.first(where: { $0.playerID == player.playerID }) : player
-//                playerDataManager.sp = player.team.roster?.first(where: { $0.playerID == player.playerID }) ?? player
-                PlayerDetailView(p: player.team.roster?.first(where: { $0.playerID == player.playerID }) ?? player)
+        NavigationLink {
+            PlayerDetailView(p: player.team.roster?.first(where: { $0.playerID == player.playerID }) ?? player)
+        } label: {
+            ZStack(alignment: .center) {
+                Text(rn).font(.system(size: 60)).fontWeight(.black).foregroundStyle(.tertiary).frame(maxWidth: .infinity, alignment: .leading)
                 
-//                if rowType == "leaders" {
-//                    if let p = player.team.roster?.first(where: { $0.playerID == player.playerID }) {
-//                        PlayerDetailView(playerDataManager: playerDataManager, p: p)
-//                    } else {
-//                        PlayerDetailView(playerDataManager: playerDataManager, p: player)
-//                    }
-//                } else {
-//                    PlayerDetailView(playerDataManager: playerDataManager, p: player)
-//                }
-
-                
-            } label: {
-                ZStack(alignment: .center) {
-                    Text(rn).font(.system(size: 60)).fontWeight(.black).foregroundStyle(.tertiary).frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    HStack {
-                        VStack {
-                            Spacer()
-                            
-                            if let pic = playerDataManager.playerHeadshots.first(where: { $0.playerID == player.playerID })?.pic {
-                                pic.resizable().aspectRatio(contentMode: .fill).frame(width: 80, height: 60, alignment: .bottom)
-                                    .padding(.trailing, -20)
-                            } else {
-                                headshotView
-                            }
-//                            AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
-//                                image
-//                                    .resizable()
-//                                    .scaledToFit()
-//                            } placeholder: {
-//                                Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
-//                            }
-//                            .frame(width: 80, height: 60, alignment: .bottom)
-//                            .padding(.trailing, -20)
-                        }
-                        
-                        let pos = player.position ?? "-"
-                        let ht = player.height ?? "-"
-                        let wt = player.weight ?? "-"
-                        let bd = player.birthDate ?? "-"
-                        let age = player.age ?? nil
-                        let exp = player.experience ?? "-"
-                        let sch = player.college ?? "-"
-                        let ha = player.howAcquired ?? "-"
-                        
-                        VStack(alignment: .leading) {
-                            
-                            Text(player.firstName).padding(.bottom, -10)
-                            Text(player.lastName).font(.title2).minimumScaleFactor(0.1).bold()
-                            
-                            HStack {
-                                if rowType == "leaders" {
-                                    Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill).frame(width: 25)
-                                    Text(player.team.abbr).foregroundStyle(.tertiary).bold().font(.callout)
-                                } else {
-                                    HStack(alignment: .bottom) {
-                                        Text(pos)
-                                        Divider().frame(maxWidth: 2).overlay(.background).padding(.vertical, -10)
-                                        Text("#\(player.jersey ?? "-")")
-                                    }.font(.caption).bold().foregroundStyle(.background).padding(.horizontal, 8).padding(.vertical, 2).background(
-                                        RoundedRectangle(
-                                            cornerRadius: 4,
-                                            style: .continuous
-                                        )
-                                        .fill(Color(pc))
-                                    )
-                                }
-                            }.frame(maxHeight: 10).padding(.top, -10)
-                        }
-                        
+                HStack {
+                    VStack {
                         Spacer()
                         
-                        VStack(alignment: .trailing) {
+                        headshotView
+                    }
+                    
+                    let pos = player.position ?? "-"
+                    let ht = player.height ?? "-"
+                    let wt = player.weight ?? "-"
+                    let bd = player.birthDate ?? "-"
+                    let age = player.age ?? nil
+                    let exp = player.experience ?? "-"
+                    let sch = player.college ?? "-"
+                    let ha = player.howAcquired ?? "-"
+                    
+                    VStack(alignment: .leading) {
+                        
+                        Text(player.firstName).padding(.bottom, -10)
+                        Text(player.lastName).font(.title2).minimumScaleFactor(0.1).bold()
+                        
+                        HStack {
                             if rowType == "leaders" {
-                                Text(getStatStr()).font(.title2).fontWeight(.bold)
-                                Text("\(criterion)").font(.caption2)
-                                Text("per game").font(.system(size: 8)).foregroundStyle(.secondary)
+                                Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill).frame(width: 25)
+                                Text(player.team.abbr).foregroundStyle(.tertiary).bold().font(.callout)
                             } else {
-                                HStack {
-                                    VStack {
-                                        Text("\(ht)").font(.caption).bold()
-                                        Text("Ht").font(.caption2).foregroundStyle(.tertiary)
-                                    }
-                                    
-                                    VStack {
-                                        Text("\(wt)").font(.caption).bold()
-                                        Text("Wt").font(.caption2).foregroundStyle(.tertiary)
-                                    }
-                                    
-                                    VStack {
-                                        Text("\(age ?? 0)").font(.caption).bold()
-                                        Text("Age").font(.caption2).foregroundStyle(.tertiary)
-                                    }
+                                HStack(alignment: .bottom) {
+                                    Text(pos)
+                                    Divider().frame(maxWidth: 2).overlay(.background).padding(.vertical, -10)
+                                    Text("#\(player.jersey ?? "-")")
+                                }.font(.caption).bold().foregroundStyle(.background).padding(.horizontal, 8).padding(.vertical, 2).background(
+                                    RoundedRectangle(
+                                        cornerRadius: 4,
+                                        style: .continuous
+                                    )
+                                    .fill(Color(pc))
+                                )
+                            }
+                        }.frame(maxHeight: 10).padding(.top, -10)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing) {
+                        if rowType == "leaders" {
+                            Text(getStatStr()).font(.title2).fontWeight(.bold)
+                            Text("\(criterion)").font(.caption2)
+                            Text("per game").font(.system(size: 8)).foregroundStyle(.secondary)
+                        } else {
+                            HStack {
+                                VStack {
+                                    Text("\(ht)").font(.caption).bold()
+                                    Text("Ht").font(.caption2).foregroundStyle(.tertiary)
                                 }
                                 
-                                Text("\(ha)").font(.caption2).padding(.top, 2)
-                                Text("\(sch)").font(.caption2).bold()
+                                VStack {
+                                    Text("\(wt)").font(.caption).bold()
+                                    Text("Wt").font(.caption2).foregroundStyle(.tertiary)
+                                }
+                                
+                                VStack {
+                                    Text("\(age ?? 0)").font(.caption).bold()
+                                    Text("Age").font(.caption2).foregroundStyle(.tertiary)
+                                }
                             }
+                            
+                            Text("\(ha)").font(.caption2).padding(.top, 2)
+                            Text("\(sch)").font(.caption2).bold()
                         }
                     }
                 }
             }
         }
-//        .buttonStyle(.plain)
-//        .sheet(isPresented: $playerDataManager.showComparePage) {
-//            CompareView(playerDataManager: playerDataManager, sp: player, needsOverlay: true).presentationDetents([.medium, .large, .fraction(0.8), .height(400)],selection: $playerDataManager.currentDetent)
-//                .presentationBackgroundInteraction(.enabled)
-//        }
     }
-    
-//    func getTeam() -> Team {
-//        var team : Team
-//        
-//        if let t = Team.teamData.first(where: { $0.teamID == player.teamID }) {
-//            team = t
-//        } else {
-//            team = Team.teamData[30]
-//        }
-//        
-//        return team
-//    }
     
     var headshotView: some View {
         AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { phase in
@@ -157,9 +107,9 @@ struct PlayerRowView: View {
             case .empty:
                 Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
             case .success(let image):
-                let _ = DispatchQueue.main.async {
-                    playerDataManager.playerHeadshots.append(PlayerHeadshot(playerID: player.playerID, pic: image))
-                }
+//                let _ = DispatchQueue.main.async {
+//                    playerDataManager.playerHeadshots.append(PlayerHeadshot(playerID: player.playerID, pic: image))
+//                }
                 
                 image.resizable().scaledToFit()
             case .failure:
@@ -225,5 +175,5 @@ struct PlayerRowView: View {
 
 
 #Preview {
-    PlayerRowView(player: Player.demoPlayer, rowType: "leaders").environmentObject(PlayerDataManager()).environmentObject(FavoritesManager())
+    PlayerRowView(player: Player.demoPlayer, rowType: "leaders").environmentObject(PlayerDataManager())
 }

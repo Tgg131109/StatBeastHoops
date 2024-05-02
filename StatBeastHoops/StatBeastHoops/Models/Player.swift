@@ -36,7 +36,6 @@ struct Player: Decodable, Encodable, Identifiable {
     var seasonStats: [PlayerSeasonStats]? = []
     var careerStats: [PlayerCareerStats]? = []
     
-    
     var gp: Double? = -1
     var gs: Double? = -1
     var min: Double? = -1

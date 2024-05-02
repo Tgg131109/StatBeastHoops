@@ -19,36 +19,72 @@ struct Team {
     var division: String
     var logo: UIImage
     var priColor: UIColor
-    var roster : [Player]? = []
+    var minYear: String?
+    var maxYear: String?
+    
+    var headerStats: [String : String]? = [:]
+    var socials: [String : String]? = [:]
+    
+    var arena: String?
+    var arenaCapacity: String?
+    var owner: String?
+    var gm: String?
+    var hc: String?
+    var dLeague: String?
+    
+    var roster: [Player]? = []
+    var games: [String : [GameStats]]? = [:]
+    var stats: [TeamStats]? = []
+    
     var wins: Int? = 0
     var loss: Int? = 0
     var divRank: Int? = 0
     var leagueRank: Int? = 0
     
-    var record : String {
+    var record: String {
         return "\(wins ?? 0) - \(loss ?? 0)"
     }
     
-    var standing : String {
+    var standing: String {
         var str = String()
         
         switch divRank {
         case 1:
-            str = "1st | "
+            str = "1st - "
         case 2:
-            str = "2nd | "
+            str = "2nd - "
         case 3:
-            str = "3rd | "
+            str = "3rd - "
         case 4:
-            str = "4th | "
+            str = "4th - "
         case 5:
-            str = "5th | "
+            str = "5th - "
         default:
             str = ""
         }
         
         return "\(str)\(division) Division"
     }
+    
+//    var founded: String {
+//        var f = "-"
+//        
+//        if let my = minYear {
+//            f = "\(my)"
+//        }
+//        
+//        return f
+//    }
+    
+//    var capacity: String {
+//        var c = "-"
+//        
+//        if let ac = arenaCapacity {
+//            c = "\(ac)"
+//        }
+//        
+//        return c
+//    }
     
     var thumbnail : UIImage {
         return logo.scale(newWidth: 40).withRenderingMode(.alwaysOriginal)

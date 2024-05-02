@@ -39,7 +39,7 @@ struct SplashView: View {
         .environmentObject(settingsManager)
         .onAppear(perform: {   Task{
             // Get team standings
-            _ = await teamDataManager.getTeamStandings()
+//            _ = await teamDataManager.getTeamStandings()
             
             // Get team rosters
 //            statusStr = "Getting team rosters..."

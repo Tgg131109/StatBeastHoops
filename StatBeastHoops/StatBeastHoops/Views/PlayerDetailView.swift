@@ -19,8 +19,7 @@ struct PlayerDetailView: View {
     @State private var seasonType = "Regular Season"
     @State private var selView = 0
     @State private var dataReady = false
-//    @State private var highsReady = false
-//    @State private var seasonStats = SeasonStats()
+    
     @State private var seasonStats = [PlayerSeasonStats]()
     @State private var careerStats = [PlayerCareerStats]()
     @State private var gameStats : [GameStats] = []
@@ -64,43 +63,6 @@ struct PlayerDetailView: View {
                 playerInfoDrawer
                 
                 statCard
-                
-                //                    if selView == 0 {
-                //                        if !gameStats.isEmpty {
-                //                            Table(gameStats) {
-                //                                TableColumn("VS", value: \.matchup)
-                //                                TableColumn("Date", value: \.gameDate)
-                //                                TableColumn("W/L", value: \.wl)
-                //                                TableColumn("MIN") { stat in Text(String(format: "%.1f", stat.min ?? -1)) }
-                //                                TableColumn("PTS") { stat in Text(String(format: "%.1f", stat.pts ?? -1)) }
-                //                                TableColumn("FGM") { stat in Text(String(format: "%.1f", stat.fgm ?? -1)) }
-                //                                TableColumn("FGA") { stat in Text(String(format: "%.1f", stat.fga ?? -1)) }
-                //                                TableColumn("FG%") { stat in Text(String(format: "%.1f", stat.fg_pct ?? -1)) }
-                //                                TableColumn("3PM") { stat in Text(String(format: "%.1f", stat.fg3m ?? -1)) }
-                //                                TableColumn("3PA") { stat in Text(String(format: "%.1f", stat.fg3a ?? -1)) }
-                //                                //                            TableColumn("3P%") { stat in Text(String(format: "%.1f", stat.fg3_pct ?? -1)) }
-                //                                //                            TableColumn("FTM") { stat in Text(String(format: "%.1f", stat.ftm ?? -1)) }
-                //                                //                            TableColumn("FTA") { stat in Text(String(format: "%.1f", stat.fta ?? -1)) }
-                //                                //                            TableColumn("FT%") { stat in Text(String(format: "%.1f", stat.ft_pct ?? -1)) }
-                //                                //                            TableColumn("OREB") { stat in Text(String(format: "%.1f", stat.oreb ?? -1)) }
-                //                                //                            TableColumn("DREB") { stat in Text(String(format: "%.1f", stat.dreb ?? -1)) }
-                //                                //                            TableColumn("REB") { stat in Text(String(format: "%.1f", stat.reb ?? -1)) }
-                //                                //                            TableColumn("AST") { stat in Text(String(format: "%.1f", stat.ast ?? -1)) }
-                //                                //                            TableColumn("STL") { stat in Text(String(format: "%.1f", stat.stl ?? -1)) }
-                //                                //                            TableColumn("BLK") { stat in Text(String(format: "%.1f", stat.blk ?? -1)) }
-                //                                //                            TableColumn("TOV") { stat in Text(String(format: "%.1f", stat.tov ?? -1)) }
-                //                                //                            TableColumn("PF") { stat in Text(String(format: "%.1f", stat.pf ?? -1)) }
-                //                                //                            TableColumn("+/-") { stat in Text(String(format: "%.1f", stat.pm ?? -1)) }
-                //                            }
-                //                        }
-                //                    } else if selView == 1 {
-                //
-                //                    } else {
-                //                        Text(p.lastName)
-                //                    }
-                
-                //                    Spacer()
-                //                }
             }
             .toolbar {
                 if !playerDataManager.showCharts {
@@ -147,7 +109,8 @@ struct PlayerDetailView: View {
     var headerCard: some View {
         ZStack(alignment: .bottom) {
             // Background team logo
-            Image(uiImage: team.logo).resizable()
+            Image(uiImage: team.logo)
+                .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(maxWidth: .infinity, maxHeight: 150)
                 .padding(.trailing, -200)
@@ -209,25 +172,20 @@ struct PlayerDetailView: View {
                 .overlay(content: { if !dataReady { ShimmerEffectBox() } })
                 .cornerRadius(16, corners: [.topLeft, .topRight])
                 
-                VStack {
-                    // Player image
-                    HStack {
-                        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p.playerID).png")) { image in
-                            image
-                                .resizable()
-                                .scaledToFit()
-                        } placeholder: {
-                            Image(uiImage: team.logo)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(maxWidth: 160)
-                                .opacity(0.4)
-                        }
-                        .padding(.top, 6)
-                        .frame(maxWidth: .infinity, maxHeight: 160, alignment: .trailing)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: 160)
+                // Player image
+                AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p.playerID).png")) { image in
+                    image
+                        .resizable()
+                        .scaledToFit()
+                } placeholder: {
+                    Image(uiImage: team.logo)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(maxWidth: 160)
+                        .opacity(0.4)
                 }
+                .padding(.top, 6)
+                .frame(maxWidth: .infinity, maxHeight: 160, alignment: .trailing)
             }
             .padding(.horizontal)
             .padding(.top, 20)
@@ -241,7 +199,7 @@ struct PlayerDetailView: View {
                 VStack {
                     let s = String(format: "%.1f", (Double((selectedStats[0].pts)/(selectedStats[0].gp))))
                     
-                    Text("\(s)").font(.title3).bold()
+                    Text(s).font(.title3).bold()
                     Text("PPG").font(.caption2)
                 }
                 .frame(maxWidth: .infinity)
@@ -252,7 +210,7 @@ struct PlayerDetailView: View {
                 VStack {
                     let s = String(format: "%.1f", (Double((selectedStats[0].reb)/(selectedStats[0].gp))))
                     
-                    Text("\(s)").font(.title3).bold()
+                    Text(s).font(.title3).bold()
                     Text("RPG").font(.caption2)
                 }
                 .frame(maxWidth: .infinity)
@@ -263,7 +221,7 @@ struct PlayerDetailView: View {
                 VStack {
                     let s = String(format: "%.1f", (Double((selectedStats[0].ast)/(selectedStats[0].gp))))
                     
-                    Text("\(s)").font(.title3).bold()
+                    Text(s).font(.title3).bold()
                     Text("APG").font(.caption2)
                 }
                 .frame(maxWidth: .infinity)
@@ -548,8 +506,51 @@ struct PlayerDetailView: View {
                 .scrollIndicators(.hidden)
                 .listStyle(.plain)
             } else {
-                Text("Stats by game")
-                    .frame(maxHeight: .infinity)
+                HStack {
+                    Text("matchup").frame(maxWidth: .infinity)
+//                    Divider().overlay(.ultraThinMaterial)
+                    Text("points").frame(maxWidth: .infinity)
+                    Text("fantasy").frame(maxWidth: .infinity)
+//                    Text("high").frame(maxWidth: .infinity)
+//                    Text("rank").frame(maxWidth: .infinity)
+                }
+                .frame(maxHeight: 20)
+                .font(.callout)
+                .fontWeight(.thin)
+                .padding(.horizontal, 20)
+                .padding(.top)
+                
+                List {
+                    ForEach(gameStats) { game in
+                        HStack {
+                            HStack {
+                                Text(game.homeAway == "Home" ? "vs" : "at")
+                                
+                                Image(uiImage: game.vsTeam.logo)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 30, height: 30)
+                                
+                                Text(game.vsTeam.abbr)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            
+                            Text("\(Int(game.pts ?? 0))")
+                                .frame(maxWidth: .infinity)
+                                .bold()
+                            
+                            Text("\(String(format: "%.1f", (game.fantasyPts ?? 0)))")
+                                .frame(maxWidth: .infinity)
+                                .bold()
+                        }
+                        .listRowBackground(Color.clear)
+                    }
+                }
+                .padding(.horizontal, 0)
+                .scrollIndicators(.hidden)
+                .listStyle(.plain)
             }
         }
         .frame(maxHeight: .infinity)
@@ -674,83 +675,6 @@ struct PlayerDetailView: View {
             
             highs = ["-", "-", "\(h.min)", "\(h.fgm)", "\(h.fga)", String(format: "%.1f", (Double(h.fg_pct)) * 100), "\(h.fg3m)", "\(h.fg3a)", String(format: "%.1f", (Double(h.fg3_pct)) * 100), "\(h.ftm)", "\(h.fta)", String(format: "%.1f", (Double(h.ft_pct)) * 100), "\(h.oreb)", "\(h.dreb)", "\(h.reb)", "\(h.ast)", "\(h.stl)", "\(h.blk)", "\(h.tov)", "\(h.pf)", "\(h.pts)"]
         }
-    }
-}
-
-
-struct FollowButton: View {
-    @EnvironmentObject var favoritesManager : FavoritesManager
-    
-    let p : Player?
-    let t : Team?
-    
-    var isFav : Bool {
-        if p != nil {
-            return favoritesManager.contains(p!)
-        } else {
-            return favoritesManager.contains(t!)
-        }
-    }
-    
-    var pc : UIColor {
-        if p != nil {
-            return p!.team.priColor
-        } else {
-            return t!.priColor
-        }
-    }
-    
-    var body: some View {
-//        Button(isFav ? "Following" : "Follow") {
-//            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-//                if isFav {
-//                    if p != nil {
-//                        favoritesManager.remove(p!)
-//                    } else {
-//                        favoritesManager.remove(t!)
-//                    }
-//                } else {
-//                    if p != nil {
-//                        favoritesManager.add(p!)
-//                    } else {
-//                        favoritesManager.add(t!)
-//                    }
-//                }
-//            }
-//        }
-//        .fontWeight(.bold).font(.caption)
-//        .foregroundStyle(isFav ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
-//        .background(
-//            RoundedRectangle(
-//                cornerRadius: 10
-//            )
-//            .stroke(isFav ? Color.primary : Color.secondary, lineWidth: 3)
-//            .fill(isFav ? AnyShapeStyle(Color(pc)) : AnyShapeStyle(.regularMaterial))
-//        )
-//        .buttonStyle(.bordered)
-        
-        Button(isFav ? "Following" : "Follow") {
-            withAnimation {
-                if isFav {
-                    if p != nil {
-                        favoritesManager.remove(p!)
-                    } else {
-                        favoritesManager.remove(t!)
-                    }
-                } else {
-                    if p != nil {
-                        favoritesManager.add(p!)
-                    } else {
-                        favoritesManager.add(t!)
-                    }
-                }
-            }
-        }
-        .font(.system(size: 14))
-        .fontWeight(.semibold)
-        .foregroundStyle(.white)
-        .buttonStyle(.borderedProminent)
-        .tint(isFav ? Color(pc) : .secondary)
     }
 }
 
