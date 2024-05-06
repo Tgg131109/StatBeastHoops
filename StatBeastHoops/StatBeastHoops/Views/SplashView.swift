@@ -58,11 +58,17 @@ struct SplashView: View {
             
             // Get league leaders
             statusStr = "Getting league leaders..."
-            _ = await playerDataManager.getLeaders(cat: "PTS")
+            _ = await playerDataManager.getAllLeaders(st: "Regular Season")
+//            _ = await playerDataManager.getLeaders(cat: "PTS")
+//            _ = await playerDataManager.getLeaders(cat: "REB")
+//            _ = await playerDataManager.getLeaders(cat: "AST")
+//            _ = await playerDataManager.getLeaders(cat: "BLK")
+//            _ = await playerDataManager.getLeaders(cat: "STL")
+//            _ = await playerDataManager.getLeaders(cat: "FG_PCT", pm: "Totals")
             
             // Get today's games
             statusStr = "Getting today's games..."
-//            _ = await playerDataManager.getAllPlayers()
+            _ = await teamDataManager.getTodaysGames()
             
             // Get all players
             statusStr = "Getting players..."

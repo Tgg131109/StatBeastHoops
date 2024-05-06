@@ -11,6 +11,7 @@ import SwiftUI
 @MainActor
 class TeamDataManager : ObservableObject {
     @Published var season = "2023-24"
+    @Published var todaysGames = [Game]()
     @Published var teamPlayers = [Int : [Player]]()
     @Published var teamCoaches = [Int : [Player]]()
     
@@ -232,8 +233,8 @@ class TeamDataManager : ObservableObject {
 ////        }
 //    }
     
-    func getTodaysGames() async -> [Game] {
-        var games = [Game]()
+    func getTodaysGames() async {
+//        var games = [Game]()
         
         // Validate URL.
         guard let validURL = URL(string: "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json")
@@ -254,7 +255,7 @@ class TeamDataManager : ObservableObject {
                 }
                 
                 print("JSON object creation failed.")
-                return []
+                return
             }
             
             // Create json Object from downloaded data above and cast as [String: Any].
@@ -262,13 +263,13 @@ class TeamDataManager : ObservableObject {
                 guard let data = jsonObj["scoreboard"] as? [String: Any]
                 else {
                     print("This isn't working")
-                    return []
+                    return
                 }
                 
                 guard let gameData = data["games"] as? [Any]
                 else {
                     print("This isn't working")
-                    return []
+                    return
                 }
                 
                 for game in gameData {
@@ -293,7 +294,7 @@ class TeamDataManager : ObservableObject {
                             continue
                         }
                         
-                        games.append(Game(id: id, status: status, clock: clock, time: time, homeTeamID: htID, awayTeamID: atID, homeTeamScore: hScore, awayTeamScore: aScore))
+                        todaysGames.append(Game(id: id, status: status, clock: clock, time: time, homeTeamID: htID, awayTeamID: atID, homeTeamScore: hScore, awayTeamScore: aScore))
                     } else {
                         print("game data error")
                     }
@@ -301,10 +302,10 @@ class TeamDataManager : ObservableObject {
                 
             }
         } catch {
-            return []
+            return
         }
 //        print(games.count)
-        return games
+//        return games
     }
     // MARK: this is where the new setup starts for getting data.
     func getStandings() async -> [Team] {

@@ -24,10 +24,18 @@ struct ContentView: View {
     var body: some View {
         TabView {
             NavigationView {
-                HomeView()
+                TodayView()
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
-                            Text("StatBeast | Hoops").bold().foregroundStyle(.tertiary)
+                            VStack(alignment: .leading) {
+                                Text("StatBeast | Hoops")
+                                    .bold()
+                                    .foregroundStyle(.tertiary)
+                                
+                                Text(Date.now, format: .dateTime.day().month().year())
+                                    .foregroundStyle(.tertiary)
+                                    .font(.footnote)
+                            }
                         }
                         
                         ToolbarItem(placement: .topBarTrailing) {

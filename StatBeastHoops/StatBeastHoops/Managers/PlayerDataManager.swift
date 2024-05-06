@@ -14,6 +14,13 @@ class PlayerDataManager : ObservableObject {
     @Published var historicalPlayers = [Player]()
     @Published var inactivePlayers = [Player]()
     @Published var leaders = [Player]()
+    @Published var ptsLeaders = [Player]()
+    @Published var rebLeaders = [Player]()
+    @Published var astLeaders = [Player]()
+    @Published var blkLeaders = [Player]()
+    @Published var stlLeaders = [Player]()
+    @Published var fgLeaders = [Player]()
+    
     @Published var playerHeadshots = [PlayerHeadshot]()
     @Published var playerStats = [PlayerStats]()
     @Published var playerGameStats = [PlayerGameStats]()
@@ -44,6 +51,7 @@ class PlayerDataManager : ObservableObject {
     @Published var showSettingsPage = false
     
     @Published var showCharts = false
+    @Published var showGlossary = false
     @Published var sortBy = "A-Z"
     //    @State var searchText = ""
     //    @Published var searchScope = "All"
@@ -65,6 +73,7 @@ class PlayerDataManager : ObservableObject {
         return ap
     }
     
+    let leaderSeasonTypes = ["Preseason", "Regular Season", "Playoffs"]
     let seasonTypes = ["Preseason","Regular Season", "Postseason", "All-Star", "Play In", "In-Season Tournament"]
     let totalCategories = ["GP", "GS", "MIN", "FGM", "FGA", "FG %", "FG3M", "FG3A", "FG3 %", "FTM", "FTA", "FT %", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TOV", "PF", "PTS"]
     init() {
@@ -181,11 +190,31 @@ class PlayerDataManager : ObservableObject {
         
     }
     
-    func getLeaders(cat: String) async {
+    func getAllLeaders(st: String) async {
+        ptsLeaders.removeAll()
+        rebLeaders.removeAll()
+        astLeaders.removeAll()
+        blkLeaders.removeAll()
+        stlLeaders.removeAll()
+        fgLeaders.removeAll()
+        
+        _ = await getLeaders(cat: "PTS", st: st != "Preseason" ? st : "Pre Season")
+        _ = await getLeaders(cat: "REB", st: st != "Preseason" ? st : "Pre Season")
+        _ = await getLeaders(cat: "AST", st: st != "Preseason" ? st : "Pre Season")
+        _ = await getLeaders(cat: "BLK", st: st != "Preseason" ? st : "Pre Season")
+        _ = await getLeaders(cat: "STL", st: st != "Preseason" ? st : "Pre Season")
+        _ = await getLeaders(cat: "FG_PCT", pm: "Totals", st: st != "Preseason" ? st : "Pre Season")
+    }
+    
+    func getLeaders(cat: String, pm: String = "PerGame", st: String = "Regular Season") async {
+        // leagueleaders endpoint
+        // ['PLAYER_ID', 'RANK', 'PLAYER', 'TEAM', 'GP', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS', 'EFF', 'AST_TOV', 'STL_TOV']
+        // pm = "PerGame" - MIN, OREB, DREB, REB, AST, STL, BLK, TOV, EFF, PTS
+        // pm = "Totals" - MIN, FGM, FGA, FG_PCT, FG3M, FG3A, FG3_PCT, FTM, FTA, FT_PCT, OREB, DREB, REB, AST, STL, BLK, TOV, EFF, PTS, AST_TO, STL_TO, PF
         leaders.removeAll()
         
         // Validate URL.
-        guard let validURL = URL(string: "https://stats.nba.com/stats/leagueLeaders?LeagueID=00&PerMode=PerGame&Scope=S&Season=2023-24&SeasonType=Regular%20Season&StatCategory=\(cat)")
+        guard let validURL = URL(string: "https://stats.nba.com/stats/leagueLeaders?LeagueID=00&PerMode=\(pm)&Scope=S&Season=2023-24&SeasonType=\(st)&StatCategory=\(cat)")
         else { fatalError("Invalid URL")}
         
         var urlRequest = URLRequest(url: validURL)
@@ -213,7 +242,7 @@ class PlayerDataManager : ObservableObject {
                     print("This isn't working")
                     return
                 }
-                
+//                print(data)
                 guard let headers = data["headers"] as? [Any],
                       let players = data["rowSet"] as? [[Any]]
                 else {
@@ -255,7 +284,24 @@ class PlayerDataManager : ObservableObject {
                         }
                     }
                     
-                    self.leaders.append(newPlayer)
+                    switch cat {
+                    case "PTS":
+                        self.ptsLeaders.append(newPlayer)
+                    case "REB":
+                        self.rebLeaders.append(newPlayer)
+                    case "AST":
+                        self.astLeaders.append(newPlayer)
+                    case "BLK":
+                        self.blkLeaders.append(newPlayer)
+                    case "STL":
+                        self.stlLeaders.append(newPlayer)
+                    case "FG_PCT":
+                        self.fgLeaders.append(newPlayer)
+                    default:
+                        break
+                    }
+                    
+//                    self.leaders.append(newPlayer)
                 }
             }
         } catch {
@@ -616,6 +662,57 @@ class PlayerDataManager : ObservableObject {
     //    }
     
     // MARK: New player data retrieval setup
+    func getStatLeaders(cat: String) async {
+        let data = await getData(url: "https://stats.nba.com/stats/leagueLeaders?LeagueID=00&PerMode=PerGame&Scope=S&Season=2023-24&SeasonType=Regular%20Season&StatCategory=\(cat)")
+        
+        if !data.isEmpty {
+            print(data)
+            guard let headers = data[0]["headers"] as? [Any],
+                  let players = data[0]["rowSet"] as? [[Any]]
+            else {
+                print("This isn't working")
+                return
+            }
+            
+            statCriteria = (headers as? [String] ?? [""])
+            
+            let dni = ["PLAYER_ID", "RANK", "PLAYER", "TEAM_ID", "TEAM"]
+            
+            statCriteria.removeAll(where: { dni.contains($0) })
+            
+            for player in players {
+                var i = 0
+                var p = [String : Any]()
+                
+                for header in headers {
+                    p[header as! String] = player[i]
+                    i += 1
+                }
+                
+                let nameFormatter = PersonNameComponentsFormatter()
+                let name = p["PLAYER"]
+                var fname = ""
+                var lname = ""
+                
+                if let nameComps  = nameFormatter.personNameComponents(from: name as! String) {
+                    fname = nameComps.givenName ?? p["PLAYER"] as! String
+                    lname = nameComps.familyName ?? ""
+                }
+                
+                var newPlayer = Player(playerID: p["PLAYER_ID"] as! Int, firstName: fname, lastName: lname, rank: p["RANK"] as? Int, teamID: p["TEAM_ID"] as! Int, gp: p["GP"] as? Double, min: p["MIN"] as? Double, fgm: p["FGM"] as? Double, fga: p["FGA"] as? Double, fg_pct: p["FG_PCT"] as? Double, fg3m: p["FG3M"] as? Double, fg3a: p["FG3A"] as? Double, fg3_pct: p["FG3_PCT"] as? Double, ftm: p["FTM"] as? Double, fta: p["FTA"] as? Double, ft_pct: p["FT_PCT"] as? Double, oreb: p["OREB"] as? Double, dreb: p["DREB"] as? Double, reb: p["REB"] as? Double, ast: p["AST"] as? Double, stl: p["STL"] as? Double, blk: p["BLK"] as? Double, tov: p["TOV"] as? Double, pts: p["PTS"] as? Double, eff: p["EFF"] as? Double)
+                
+                if let team = Team.teamData.first(where: { $0.teamID == newPlayer.teamID }) {
+                    if let player = team.roster?.first(where: { $0.playerID == newPlayer.playerID }) {
+                        newPlayer.jersey = player.jersey
+                        newPlayer.position = player.position
+                    }
+                }
+                
+                self.leaders.append(newPlayer)
+            }
+        }
+    }
+    
     func getLeadersGrid(season: String) async {
         let data = await getData(url: "https://stats.nba.com/stats/homepagev2?GameScope=Season&LeagueID=00&PlayerOrTeam=Team&PlayerScope=All+Players&Season=\(season)&SeasonType=Regular+Season&StatType=Traditional")
         

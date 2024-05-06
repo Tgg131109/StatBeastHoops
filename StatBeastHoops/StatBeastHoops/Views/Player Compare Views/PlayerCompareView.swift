@@ -137,8 +137,8 @@ struct PlayerCompareView: View {
         .onAppear(perform: {
             // Comment this entire onAppear section to prevent preview from crashing while developing.
             if cvm.p1!.playerID == cvm.p2!.playerID {
-                cvm.p1 = playerDataManager.leaders[0]
-                cvm.p2 = playerDataManager.leaders[1]
+                cvm.p1 = playerDataManager.ptsLeaders[0]
+                cvm.p2 = playerDataManager.ptsLeaders[1]
             }
             
             Task {

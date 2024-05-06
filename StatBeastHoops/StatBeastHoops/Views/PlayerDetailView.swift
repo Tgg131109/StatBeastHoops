@@ -25,7 +25,6 @@ struct PlayerDetailView: View {
     @State private var gameStats : [GameStats] = []
     @State private var highs : [String] = []
     @State private var showInfoDrawer = true
-    @State private var showCharts = false
     
     @State var p : Player
     
@@ -65,7 +64,7 @@ struct PlayerDetailView: View {
                 statCard
             }
             .toolbar {
-                if !playerDataManager.showCharts {
+                if !playerDataManager.showCharts && !playerDataManager.showGlossary {
                     ToolbarItem(placement: .topBarLeading) {
                         Button("", systemImage: "chevron.backward.circle.fill") {
                             self.presentationMode.wrappedValue.dismiss()
@@ -100,6 +99,7 @@ struct PlayerDetailView: View {
             .navigationBarBackButtonHidden(true)
         }
         .overlay(content: {if playerDataManager.showCharts { ChartView(p: p, selectedStats: selectedStats, data: gameStats).background(.ultraThinMaterial) } })
+        .overlay(content: {if playerDataManager.showGlossary { GlossaryView().background(.ultraThinMaterial) } })
         .onAppear(perform: {   Task{
             await getPlayerData()
             dataReady = true
@@ -367,7 +367,7 @@ struct PlayerDetailView: View {
     
     var statCard: some View {
         VStack {
-            HStack {
+            HStack(alignment: .center) {
                 Menu {
                     Picker("Season", selection: $season) {
                         ForEach(seasons, id: \.self) {
@@ -387,7 +387,6 @@ struct PlayerDetailView: View {
                 }
                 
                 Divider()
-                    .frame(maxWidth: 1)
                 
                 Menu {
                     Picker("Season Type", selection: $seasonType) {
@@ -404,10 +403,19 @@ struct PlayerDetailView: View {
                         .font(.subheadline)
                         .tint(.secondary)
                 }
+                
+                Spacer()
+                
+                Button("", systemImage:"info.circle") {
+                    withAnimation {
+                        playerDataManager.showGlossary.toggle()
+                    }
+                }
+                .tint(.secondary)
             }
-            .frame(maxWidth: .infinity, maxHeight: 16, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: 20)
             .padding(.horizontal)
-            .padding(.top, 6)
+            .padding(.top, 10)
             
             Divider()
                 .frame(maxHeight: 2)
@@ -508,11 +516,8 @@ struct PlayerDetailView: View {
             } else {
                 HStack {
                     Text("matchup").frame(maxWidth: .infinity)
-//                    Divider().overlay(.ultraThinMaterial)
                     Text("points").frame(maxWidth: .infinity)
                     Text("fantasy").frame(maxWidth: .infinity)
-//                    Text("high").frame(maxWidth: .infinity)
-//                    Text("rank").frame(maxWidth: .infinity)
                 }
                 .frame(maxHeight: 20)
                 .font(.callout)

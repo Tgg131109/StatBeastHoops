@@ -432,9 +432,9 @@ struct TeamDetailView: View {
                         .tint(.secondary)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: 16, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: 20, alignment: .leading)
             .padding(.horizontal)
-            .padding(.top, 6)
+            .padding(.top, 10)
             
             Divider()
                 .frame(maxHeight: 2)
@@ -468,9 +468,9 @@ struct TeamDetailView: View {
                     Text("W/L").frame(maxWidth: .infinity)
                     
                     HStack {
-                        Text("H").foregroundStyle(.secondary)
+                        Text("H").foregroundStyle(.tertiary)
                         Text("score")
-                        Text("A").foregroundStyle(.secondary)
+                        Text("A").foregroundStyle(.tertiary)
                     }
                     .frame(maxWidth: .infinity)
                 }
