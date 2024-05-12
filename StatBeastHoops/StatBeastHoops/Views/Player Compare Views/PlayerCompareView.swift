@@ -16,6 +16,7 @@ struct PlayerCompareView: View {
     
     @State private var season = "2023-24"
     @State private var dataReady = false
+    @State private var activeTab = 1
     @State private var statSetType = 0
     
     @State private var data = [[GameStats]]()
@@ -83,14 +84,31 @@ struct PlayerCompareView: View {
             VStack {
                 matchupCard
                 
-                TabView {
+                HStack {
+                    if activeTab == 2 {
+                        Image(systemName: "arrowshape.backward")
+                    }
+                    
+                    Text(activeTab == 1 ? "Swipe for charts" : "Swipe for stats")
+                        
+                    
+                    if activeTab == 1 {
+                        Image(systemName: "arrowshape.forward")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                
+                TabView(selection: $activeTab.animation()) {
                     VStack {
                         statsCard
                         winnerCard
                     }
                     .padding(.horizontal)
+                    .tag(1)
                     
                     chartCard
+                        .tag(2)
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
@@ -102,7 +120,6 @@ struct PlayerCompareView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack {
                         Button {
-//                            print("Save Matchup")
                             withAnimation {
                                 if isFav {
                                     favoritesManager.remove(matchup)
@@ -222,14 +239,16 @@ struct PlayerCompareView: View {
         VStack {
             let totalStats = ["GP", "W", "L"]
             
-            Picker("Stat Set", selection: $statSetType) {
+            Picker("Stat Set", selection: $statSetType.animation()) {
                 Text("Head-to-Head").tag(0)
                 Text("Overall").tag(1)
             }
             .pickerStyle(.segmented)
             .padding([.top, .horizontal])
             
-            Text("2023-24 Regular Season Stats").font(.caption).foregroundStyle(.tertiary)
+            Text("2023-24 Regular Season Stats")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
             
             if !dataReady {
                 ProgressView().padding().controlSize(.large)
@@ -281,8 +300,13 @@ struct PlayerCompareView: View {
             }
             
             HStack {
-                Text(statSetType == 0 ? "opponent on court" : "").font(.caption).bold()
-                Text(statSetType == 0 ? "opponent off court" : "").font(.caption2).foregroundStyle(.secondary)
+                Text(statSetType == 0 ? "opponent on court" : "")
+                    .font(.caption)
+                    .bold()
+                
+                Text(statSetType == 0 ? "opponent off court" : "")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
             .padding(.bottom, 6)
             .padding(.top, 2)
@@ -368,7 +392,11 @@ struct PlayerCompareView: View {
                                 x: .value("X", data.sort),
                                 y: .value("Y", data.val)
                             )
-                            .foregroundStyle(data.color)
+                            .foregroundStyle(
+                                    .linearGradient(
+                                        colors: [data.color, data.color.opacity(0.4)], startPoint: .top, endPoint: .bottom
+                                    )
+                                )
                             .annotation(position: .top) {
                                 Group {
                                     HStack {
@@ -516,15 +544,13 @@ struct PlayerCompareView: View {
                     }
                 }
                 
-                Picker("Data Splits", selection: $splitBy) {
+                Picker("Data Splits", selection: $splitBy.animation()) {
                     Text("Traditional").tag(0)
                     Text("Trends").tag(1)
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: splitBy, {
-                    withAnimation {
-                        getCharts()
-                    }
+                    getCharts()
                 })
             }
             .padding()
@@ -730,19 +756,6 @@ struct PlayerCompareView: View {
         return y
     }
     
-//    func getCriteria() -> [String] {
-//        var c = [String]()
-//        let totalStats = ["GP", "W", "L"]
-//        
-//        for sc in cvm.statCompare {
-//            if !sc.stat.contains("PCT") && !totalStats.contains(sc.stat) {
-//                c.append(sc.stat)
-//            }
-//        }
-//        
-//        return c
-//    }
-    
     func getPerGameStat(val: String, i: Int) -> String {
         let pg = String(format: "%.1f", (Double(val) ?? 0) / gamesPlayed[i])
         
@@ -801,7 +814,6 @@ struct PlayerCompareView: View {
         }
         
         // Significant Stats (FG_PCT, TOV, OREB, FTA)
-//        return pts1 > pts2 ? "\(cvm.p1!.firstName) \(cvm.p1!.lastName)" : "\(cvm.p2!.firstName) \(cvm.p2!.lastName)"
         return pts1 > pts2 ? 1 : 2
     }
 }
