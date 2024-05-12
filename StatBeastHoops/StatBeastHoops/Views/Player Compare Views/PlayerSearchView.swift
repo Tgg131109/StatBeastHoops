@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct PlayerSearchView: View {
-    @EnvironmentObject var vm : PlayerCompareViewModel
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
+    
     @EnvironmentObject var playerDataManager : PlayerDataManager
     
     @StateObject var cvm : CompareViewModel
@@ -18,7 +19,6 @@ struct PlayerSearchView: View {
     @State private var searchScope = "Current"
     @State private var selection: Set<String> = []
 //    @State private var selection: Int?
-    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     
     var p : Int
     
@@ -126,7 +126,7 @@ struct PlayerSearchView: View {
                         
                     }
                     
-                    vm.showCompareSetup = false
+                    playerDataManager.showCompareSetup = false
                 }
                 .disabled(selection.count != 2)
                 .buttonStyle(.borderedProminent)

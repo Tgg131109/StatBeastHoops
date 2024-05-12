@@ -95,3 +95,60 @@ struct GameStats : Identifiable {
         }
     }
 }
+
+struct GameStat : Identifiable {
+    var id: String { gameID }
+    
+    var gameID: String
+    var gameDate: String
+    var matchup: String
+    var sort: String
+    var val: Double
+    var val2: Double?
+    var pctChg: Double?
+    var player: Player?
+    var color: Color
+    
+    var playerID: String {
+        return "\(player?.playerID ?? Player.demoPlayer.playerID)"
+    }
+    
+    var vsTeamID : Int {
+        var vtID = -1
+        let matchupArr = matchup.components(separatedBy: " ")
+        
+        if let tID = Team.teamData.first(where: { $0.abbr == matchupArr.last })?.teamID {
+            vtID = tID
+        }
+        
+        return vtID
+    }
+    
+    var vsTeam : Team {
+        var vt = Team.teamData[30]
+        let matchupArr = matchup.components(separatedBy: " ")
+        
+        if let t = Team.teamData.first(where: { $0.abbr == matchupArr.last }) {
+            vt = t
+        }
+        
+        return vt
+    }
+    
+    var homeAway : String {
+        let matchupArr = matchup.components(separatedBy: " ")
+        
+        if matchupArr[1] == "@" {
+            return "Away"
+        } else {
+            return "Home"
+        }
+    }
+}
+
+struct GameStatCompare : Identifiable {
+    var id: String { "\(playerID)" }
+    
+    var playerID: Int
+    var gameStats: [GameStats]
+}

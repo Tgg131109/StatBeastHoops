@@ -41,30 +41,9 @@ struct SplashView: View {
             // Get team standings
 //            _ = await teamDataManager.getTeamStandings()
             
-            // Get team rosters
-//            statusStr = "Getting team rosters..."
-//            await withTaskGroup(of: [Player].self) { group in
-//                for team in Team.teamData {
-//                    if team.teamID != 31 {
-//                        group.addTask {
-//                            return await teamDataManager.getTeamRosters(teamID: team.teamID)
-//                        }
-//                    }
-//                }
-//                
-////                for await roster in group {
-////                }
-//            }
-            
             // Get league leaders
             statusStr = "Getting league leaders..."
             _ = await playerDataManager.getAllLeaders(st: "Regular Season")
-//            _ = await playerDataManager.getLeaders(cat: "PTS")
-//            _ = await playerDataManager.getLeaders(cat: "REB")
-//            _ = await playerDataManager.getLeaders(cat: "AST")
-//            _ = await playerDataManager.getLeaders(cat: "BLK")
-//            _ = await playerDataManager.getLeaders(cat: "STL")
-//            _ = await playerDataManager.getLeaders(cat: "FG_PCT", pm: "Totals")
             
             // Get today's games
             statusStr = "Getting today's games..."
@@ -72,11 +51,11 @@ struct SplashView: View {
             
             // Get all players
             statusStr = "Getting players..."
-            _ = await playerDataManager.getAllPlayers()
+            _ = await playerDataManager.getAllPlayers(season: "2023-24")
 
             // Get all player stats
-            statusStr = "Getting player stats..."
-            _ = await playerDataManager.getAllPlayerStats()
+//            statusStr = "Getting player stats..."
+//            _ = await playerDataManager.getAllPlayerStats()
             
             statusStr = "Done"
             

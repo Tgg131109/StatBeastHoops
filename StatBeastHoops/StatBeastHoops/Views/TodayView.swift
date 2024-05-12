@@ -12,6 +12,7 @@ struct TodayView: View {
     @EnvironmentObject var teamDataManager : TeamDataManager
     
     @State private var seasonType = "Regular Season"
+    @State private var dataReady = true
     
 //    var ptsLeaders: [Player] {
 //        return Array(playerDataManager.ptsLeaders.prefix(5))
@@ -21,23 +22,23 @@ struct TodayView: View {
 //        return Array(playerDataManager.rebLeaders.prefix(5))
 //    }
     
-    var astLeaders: [Player] {
-        return Array(playerDataManager.astLeaders.prefix(5))
-    }
+//    var astLeaders: [Player] {
+//        return Array(playerDataManager.astLeaders.prefix(5))
+//    }
     
-    var blkLeaders: [Player] {
-        return Array(playerDataManager.blkLeaders.prefix(5))
-    }
+//    var blkLeaders: [Player] {
+//        return Array(playerDataManager.blkLeaders.prefix(5))
+//    }
     
-    var stlLeaders: [Player] {
-        return Array(playerDataManager.stlLeaders.prefix(5))
-    }
+//    var stlLeaders: [Player] {
+//        return Array(playerDataManager.stlLeaders.prefix(5))
+//    }
     
-    var fgLeaders: [Player] {
-        return Array(playerDataManager.fgLeaders.prefix(5))
-    }
+//    var fgLeaders: [Player] {
+//        return Array(playerDataManager.fgLeaders.prefix(5))
+//    }
     
-    var games: [Game] {
+    var todaysGames: [Game] {
         return teamDataManager.todaysGames
     }
     
@@ -46,23 +47,24 @@ struct TodayView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                     Section {
-                        GridRow(criteria: ["PTS", "REB"], leaders: [Array(playerDataManager.ptsLeaders.prefix(5)), Array(playerDataManager.rebLeaders.prefix(5))])
+                        GridRow(dataReady: $dataReady, criteria: ["PTS", "REB"], leaders: [Array(playerDataManager.ptsLeaders.prefix(5)), Array(playerDataManager.rebLeaders.prefix(5))])
                     } header: {
                         HeaderView(stats: ["Points", "Rebounds"])
                     }
                     
                     Section {
-                        GridRow(criteria: ["AST", "BLK"], leaders: [astLeaders, blkLeaders])
+                        GridRow(dataReady: $dataReady, criteria: ["AST", "BLK"], leaders: [Array(playerDataManager.astLeaders.prefix(5)), Array(playerDataManager.blkLeaders.prefix(5))])
                     } header: {
                         HeaderView(stats: ["Assists", "Blocks"])
                     }
                     
                     Section {
-                        GridRow(criteria: ["STL", "FG_PCT"], leaders: [stlLeaders, fgLeaders])
+                        GridRow(dataReady: $dataReady, criteria: ["STL", "FG_PCT"], leaders: [Array(playerDataManager.stlLeaders.prefix(5)), Array(playerDataManager.fgLeaders.prefix(5))])
                     } header: {
                         HeaderView(stats: ["Steals", "FG %"])
                     }
                 }
+                .defaultScrollAnchor(.top)
             }
             .padding(.top)
             .scrollIndicators(.hidden)
@@ -82,7 +84,9 @@ struct TodayView: View {
                         }
                         .background(.clear)
                         .onChange(of: seasonType) { Task {
+                            dataReady = false
                             _ = await playerDataManager.getAllLeaders(st: seasonType)
+                            dataReady = true
                         } }
                     } label: {
                         Text(seasonType)
@@ -113,7 +117,7 @@ struct TodayView: View {
                 
                 Divider()
                 
-                if games.isEmpty {
+                if todaysGames.isEmpty {
                     Text("No games today")
                         .font(.title2)
                         .fontWeight(.thin)
@@ -123,29 +127,29 @@ struct TodayView: View {
                 } else {
                     ScrollView(.horizontal) {
                         HStack(spacing: 10) {
-                            ForEach(games.indices, id: \.self) { i in
+                            ForEach(todaysGames.indices, id: \.self) { i in
                                 VStack {
                                     HStack {
-                                        let ht = Team.teamData.first(where: { $0.teamID == games[i].homeTeamID})
+                                        let ht = Team.teamData.first(where: { $0.teamID == todaysGames[i].homeTeamID})
                                         
                                         Image(uiImage: ht!.logo).resizable().frame(width: 20, height: 20)
                                         Text("\(ht!.abbr)")
                                         Spacer()
-                                        Text("\(games[i].homeTeamScore)").bold()
+                                        Text("\(todaysGames[i].homeTeamScore)").bold()
                                     }
                                     
                                     HStack {
-                                        let at = Team.teamData.first(where: { $0.teamID == games[i].awayTeamID})
+                                        let at = Team.teamData.first(where: { $0.teamID == todaysGames[i].awayTeamID})
                                         
                                         Image(uiImage: at!.logo).resizable().frame(width: 20, height: 20)
                                         Text("\(at!.abbr)")
                                         Spacer()
-                                        Text("\(games[i].awayTeamScore)").bold()
+                                        Text("\(todaysGames[i].awayTeamScore)").bold()
                                     }
                                     
                                     Divider().padding(.top, -4)
                                     
-                                    Text(games[i].status).font(.caption2)
+                                    Text(todaysGames[i].status).font(.caption2)
                                 }
                                 .padding(.vertical, 5)
                                 .padding(.horizontal, 10)
@@ -155,7 +159,7 @@ struct TodayView: View {
                                 })
                                 .padding(.vertical, 10)
                                 
-                                if i < games.count - 1 {
+                                if i < todaysGames.count - 1 {
                                     Divider().frame(maxHeight: 100)
                                 }
                             }
@@ -191,6 +195,8 @@ struct HeaderView: View {
 }
 
 struct GridRow: View {
+    @Binding var dataReady: Bool
+    
     let criteria: [String]
     let leaders: [[Player]]
     
@@ -233,6 +239,7 @@ struct GridRow: View {
                     }
                     .frame(maxWidth: .infinity)
                     .background(.regularMaterial)
+                    .overlay(content: { if !dataReady { ShimmerEffectBox() } })
                     .cornerRadius(16, corners: [.bottomLeft, .bottomRight])
                 }
                 .tint(.primary)

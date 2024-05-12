@@ -22,8 +22,8 @@ struct PlayerDetailView: View {
     
     @State private var seasonStats = [PlayerSeasonStats]()
     @State private var careerStats = [PlayerCareerStats]()
-    @State private var gameStats : [GameStats] = []
-    @State private var highs : [String] = []
+    @State private var gameStats: [GameStats] = []
+    @State private var highs: [String] = []
     @State private var showInfoDrawer = true
     
     @State var p : Player
@@ -100,7 +100,7 @@ struct PlayerDetailView: View {
         }
         .overlay(content: {if playerDataManager.showCharts { ChartView(p: p, selectedStats: selectedStats, data: gameStats).background(.ultraThinMaterial) } })
         .overlay(content: {if playerDataManager.showGlossary { GlossaryView().background(.ultraThinMaterial) } })
-        .onAppear(perform: {   Task{
+        .onAppear(perform: {   Task {
             await getPlayerData()
             dataReady = true
         } })

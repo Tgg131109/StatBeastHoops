@@ -9,44 +9,27 @@ import SwiftUI
 import Charts
 
 struct PlayerCompareView: View {
-    @EnvironmentObject var apiManager : DataManager
-    @EnvironmentObject var vm : PlayerCompareViewModel
     @EnvironmentObject var playerDataManager : PlayerDataManager
     @EnvironmentObject var favoritesManager : FavoritesManager
     
     @StateObject var cvm = CompareViewModel()
     
+    @State private var season = "2023-24"
+    @State private var dataReady = false
     @State private var statSetType = 0
-    @State private var dataFilter = 0
-    @State private var criteria = "PTS"
     
-    var data : [StatSeriesCompare] {
-        var d = cvm.gameStatCompare
-        var f = 0
-        
-        switch dataFilter {
-        case 0:
-            f = 5
-        case 1:
-            f = 10
-        case 2:
-            f = 15
-        default:
-            break
-        }
-        
-        if !(f == 0) {
-            var fd = [StatSeriesCompare]()
+    @State private var data = [[GameStats]]()
+    @State private var filteredData = [[GameStats]]()
+    @State private var playerSeasonStats = [[PlayerSeasonStats]]()
+    @State private var dataTotals = [StatTotals]()
 
-            for ds in d {
-                fd.append(StatSeriesCompare(id: ds.id, statSeries: ds.statSeries.suffix(f), color: ds.color))
-            }
-            
-            d = fd
-        }
-
-        return d
-    }
+    @State private var chartData = [[GameStat]]()
+    @State private var chartSelection: Int?
+    @State private var gameStats: [GameStatCompare] = []
+    
+    @State private var timeFrameFilter = 5
+    @State private var splitBy = 0
+    @State private var criteria = "PTS"
     
     var p1ID : Int {
         return cvm.p1!.playerID
@@ -83,12 +66,16 @@ struct PlayerCompareView: View {
         return gp
     }
     
-    var compareReady : Bool {
-        return cvm.compareReady
-    }
-    
     var statSet : [StatCompare] {
         return statSetType == 0 ? cvm.oppOnCourt : cvm.statCompare
+    }
+    
+    var matchup: Matchup {
+        return Matchup(p1: cvm.p1!, p2: cvm.p2!)
+    }
+    
+    var isFav : Bool {
+        return favoritesManager.contains(matchup)
     }
     
     var body: some View {
@@ -96,16 +83,17 @@ struct PlayerCompareView: View {
             VStack {
                 matchupCard
                 
-                ScrollView {
-                    statsCard
+                TabView {
+                    VStack {
+                        statsCard
+                        winnerCard
+                    }
+                    .padding(.horizontal)
                     
                     chartCard
-                    
-                    winnersCard
                 }
-                .scrollIndicators(.hidden)
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
-            .padding(.horizontal)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Text("Compare Players").bold().foregroundStyle(.tertiary)
@@ -114,14 +102,20 @@ struct PlayerCompareView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack {
                         Button {
-                            print("Save Matchup")
+//                            print("Save Matchup")
+                            withAnimation {
+                                if isFav {
+                                    favoritesManager.remove(matchup)
+                                } else {
+                                    favoritesManager.add(matchup)
+                                }
+                            }
                         } label: {
-//                            Text("Save Matchup")
-                            Image(systemName: "star")
+                            Image(systemName: isFav ? "square.and.arrow.down.fill" : "square.and.arrow.down")
                         }
                         
                         Button {
-                            vm.showCompareSetup = true
+                            playerDataManager.showCompareSetup = true
                             statSetType = 0
                         } label: {
                             Image(systemName: "slider.horizontal.3")
@@ -131,7 +125,7 @@ struct PlayerCompareView: View {
             }
             .toolbarTitleDisplayMode(.inline)
         }
-        .sheet(isPresented: $vm.showCompareSetup) {
+        .sheet(isPresented: $playerDataManager.showCompareSetup) {
             CompareSetupView(cvm: cvm)
         }
         .onAppear(perform: {
@@ -142,11 +136,9 @@ struct PlayerCompareView: View {
             }
             
             Task {
-                await cvm.compareStats(p1ID: "\(cvm.p1!.playerID)", p2ID: "\(cvm.p2!.playerID)", criteria: criteria)
-//                statSet = cvm.oppOnCourt
+                await getMatchupData()
+                dataReady = true
             }
-            
-//            showSetup = appManager.playerCompareVM.showSetup
         })
     }
     
@@ -173,54 +165,32 @@ struct PlayerCompareView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: 120)
                 .clipped()
-//                        .clipShape(.rect(cornerRadius: 16))
                 
                 Text("VS").font(.system(size: 60)).fontWeight(.black).foregroundStyle(.ultraThinMaterial).frame(maxHeight: 100)
-//                            .padding(.top, 20)
                 
-                VStack {
-//                            HStack {
-//                                Text("MATCHUP").foregroundStyle(.tertiary).bold()
-//
-//                                Spacer()
-//
-//                                Button {
-////                                    vm.showSetup = true
-//                                } label: {
-//                                    Text("Save Matchup")
-////                                    Image(systemName: "square.and.arrow.down").foregroundStyle(.tertiary)
-//                                }
-//                                .buttonStyle(.bordered)
-//                            }
-//                            .padding(.horizontal)
-//                            .frame(maxWidth: .infinity, maxHeight: 40)
-//                            .background(.ultraThinMaterial)
-                    
-                    // Player images
-                    HStack {
-                        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p1ID).png")) { image in
-                            image
-                                .resizable()
-                                .scaledToFit()
-                        } placeholder: {
-                            Image(uiImage: t1.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
-                        }
-                        .padding(.top, 6)
-                        .frame(maxWidth: .infinity, maxHeight: 120, alignment: .leading)
-                        
-                        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p2ID).png")) { image in
-                            image
-                                .resizable()
-                                .scaledToFit()
-                        } placeholder: {
-                            Image(uiImage: t2.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
-                        }
-                        .padding(.top, 6)
-                        .frame(maxWidth: .infinity, maxHeight: 120, alignment: .trailing)
+                // Player images
+                HStack {
+                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p1ID).png")) { image in
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    } placeholder: {
+                        Image(uiImage: t1.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: 120)
-//                            .clipShape(.rect(cornerRadius: 16))
+                    .padding(.top, 6)
+                    .frame(maxWidth: .infinity, maxHeight: 120, alignment: .leading)
+                    
+                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p2ID).png")) { image in
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    } placeholder: {
+                        Image(uiImage: t2.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
+                    }
+                    .padding(.top, 6)
+                    .frame(maxWidth: .infinity, maxHeight: 120, alignment: .trailing)
                 }
+                .frame(maxWidth: .infinity, maxHeight: 120)
             }
             
             // Player names
@@ -242,11 +212,10 @@ struct PlayerCompareView: View {
             .padding(.top, 2)
             .padding(.bottom, 10)
         }
-        .overlay(content: { if !compareReady { ShimmerEffectBox() } })
-//                .overlay()
+        .overlay(content: { if !dataReady { ShimmerEffectBox() } })
         .background(.regularMaterial)
         .clipShape(.rect(cornerRadius: 16))
-        .padding(.top)
+        .padding([.top, .horizontal])
     }
     
     var statsCard: some View {
@@ -262,7 +231,7 @@ struct PlayerCompareView: View {
             
             Text("2023-24 Regular Season Stats").font(.caption).foregroundStyle(.tertiary)
             
-            if !compareReady {
+            if !dataReady {
                 ProgressView().padding().controlSize(.large)
             } else {
                 List {
@@ -309,86 +278,24 @@ struct PlayerCompareView: View {
                 }
                 .scrollIndicators(.hidden)
                 .listStyle(.plain)
-                .frame(height: 200)
             }
             
-//                        if statSetType == 0 {
-                HStack {
-                    Text(statSetType == 0 ? "opponent on court" : "").font(.caption).bold()
-                    Text(statSetType == 0 ? "opponent off court" : "").font(.caption2).foregroundStyle(.secondary)
-                }
-                .padding(.bottom, 6)
-                .padding(.top, 2)
-//                        } else {
-//                            Text("")
-//                                .padding(.bottom, 6)
-//                                .padding(.top, 2)
-//                        }
+            HStack {
+                Text(statSetType == 0 ? "opponent on court" : "").font(.caption).bold()
+                Text(statSetType == 0 ? "opponent off court" : "").font(.caption2).foregroundStyle(.secondary)
+            }
+            .padding(.bottom, 6)
+            .padding(.top, 2)
         }
-        .overlay(content: { if !compareReady { ShimmerEffectBox() } })
+        .frame(maxHeight: .infinity)
+        .overlay(content: { if !dataReady { ShimmerEffectBox() } })
         .background(.regularMaterial)
         .clipShape(.rect(cornerRadius: 16))
     }
     
-    var chartCard: some View {
-        VStack {
-            Picker("Data Period", selection: $dataFilter) {
-                Text("Last 5").tag(0)
-                Text("Last 10").tag(1)
-                Text("Last 15").tag(2)
-                Text("Season").tag(3)
-            }
-            .pickerStyle(.segmented)
-            .padding()
-            
-            if !compareReady {
-                ProgressView().padding().controlSize(.large)
-            } else {
-                ZStack(alignment: .top) {
-                    Chart(data, id: \.id) { dataSeries in
-                        ForEach(dataSeries.statSeries) { d in
-                            let i = dataSeries.statSeries.firstIndex(where: { $0.id == d.id })
-                            
-                            LineMark(x: .value("Game", i! + 1), y: .value("Stat", d.value))
-                                .foregroundStyle(dataSeries.color)
-//                                .interpolationMethod(.catmullRom)
-                        }
-                        .symbol(by: .value("Player", dataSeries.id))
-                    }
-                    .chartXScale(domain: 1...getMaxX(data: data))
-                    .chartLegend(.hidden)
-                    .frame(height: 400)
-                    .padding()
-//                    .chartXScale(type: .linear)
-//                    .aspectRatio(1, contentMode: .fill)
-//                    .frame(maxWidth: .infinity, alignment:. top)
-//                    .background(.blue)
-                    
-                    HStack {
-                        Spacer()
-                        
-                        Picker("Criteria", selection: $criteria) {
-                            ForEach(getCriteria(), id: \.self) {
-                                Text($0)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .background(.regularMaterial).clipShape(.capsule)
-                        .onChange(of: criteria) {
-                            cvm.getChartData(criteria: criteria, pIDs: ["\(p1ID)", "\(p2ID)"])
-                        }
-                    }.padding(.horizontal, 20)
-                }
-            }
-        }
-        .overlay(content: { if !compareReady { ShimmerEffectBox() } })
-        .background(.regularMaterial)
-        .clipShape(.rect(cornerRadius: 16))
-    }
-    
-    var winnersCard: some View {
+    var winnerCard: some View {
         ZStack {
-            if !compareReady {
+            if !dataReady {
                 ProgressView().padding().controlSize(.large)
             } else {
                 let w = getWinner()
@@ -407,7 +314,6 @@ struct PlayerCompareView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: 80)
                 .clipped()
-                //            .clipShape(.rect(cornerRadius: 16))
                 
                 VStack {
                     // Player image
@@ -426,103 +332,416 @@ struct PlayerCompareView: View {
                         Text("Advantage \(pn)").foregroundStyle(.ultraThickMaterial).bold().padding(.leading, -20).padding(.trailing)
                     }
                     .frame(maxWidth: .infinity, maxHeight: 80)
-                    //                .clipShape(.rect(cornerRadius: 16))
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: 80)
-        .overlay(content: { if !compareReady { ShimmerEffectBox() } })
+        .overlay(content: { if !dataReady { ShimmerEffectBox() } })
         .background(.regularMaterial)
         .clipShape(.rect(cornerRadius: 16))
         .padding(.bottom)
     }
-//    var headshotView: some View {
-//        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { phase in
-//            switch phase {
-//            case .empty:
-//                Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
-//            case .success(let image):
-//                let _ = DispatchQueue.main.async {
-//                    playerDataManager.playerHeadshots.append(PlayerHeadshot(playerID: player.playerID, pic: image))
-//                }
-//                
-//                image.resizable().scaledToFit()
-//            case .failure:
-//                Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
-//            @unknown default:
-//                Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
-//            }
-//        }
-//        .frame(width: 80, height: 60, alignment: .bottom)
-//        .padding(.trailing, -20)
-//    }
     
-    func getCriteria() -> [String] {
-        var c = [String]()
-        let totalStats = ["GP", "W", "L"]
-        
-        for sc in cvm.statCompare {
-            if !sc.stat.contains("PCT") && !totalStats.contains(sc.stat) {
-                c.append(sc.stat)
+    var chartCard: some View {
+        VStack {
+            Picker("Data Period", selection: $timeFrameFilter) {
+                Text("Last 5").tag(5)
+                Text("Last 10").tag(10)
+                Text("Last 15").tag(15)
+                Text("Season").tag(0)
             }
-        }
-        
-        return c
-    }
-    
-//    func gamesPlayed() -> [Double] {
-//        var gp = [Double]()
-//        print(cvm.statCompare.isEmpty)
-//        if let g = cvm.statCompare.first(where: { $0.stat == "GP" }) {
-//            gp.append(Double(g.value1) ?? 0)
-//            gp.append(Double(g.value2) ?? 0)
-//        } else {
-//            print("couldn't find stat")
-//        }
-//        print(gp)
-//        return gp
-//    }
-    
-    func getMaxX(data: [StatSeriesCompare]) -> Int {
-        var maxX = 1
-        
-        for ds in data {
-            if ds.statSeries.count > maxX {
-                maxX = ds.statSeries.count
-            }
-        }
-        
-        return maxX
-    }
-    
-    func getData() -> [StatSeriesCompare] {
-        var d = cvm.gameStatCompare
-        var f = 0
-        
-        switch dataFilter {
-        case 0:
-            f = 5
-        case 1:
-            f = 10
-        case 2:
-            f = 15
-        default:
-            break
-        }
-        
-        if !(f == 0) {
-            var fd = [StatSeriesCompare]()
-
-            for ds in d {
-//                print(ds.statSeries.suffix(f))
-                fd.append(StatSeriesCompare(id: ds.id, statSeries: ds.statSeries.suffix(f), color: ds.color))
+            .pickerStyle(.segmented)
+            .padding()
+            .onChange(of: timeFrameFilter, {
+                withAnimation {
+                    filterData()
+                }
+            })
+            
+            if !dataReady {
+                ProgressView().padding().controlSize(.large)
+            } else {
+                if splitBy == 0 {
+                    Chart {
+                        ForEach(chartData[0], id: \.id) { data in
+                            BarMark(
+                                x: .value("X", data.sort),
+                                y: .value("Y", data.val)
+                            )
+                            .foregroundStyle(data.color)
+                            .annotation(position: .top) {
+                                Group {
+                                    HStack {
+                                        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(data.playerID).png")) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFit()
+                                        } placeholder: {
+                                            Image(uiImage: data.player?.team.logo ?? Team.teamData[30].logo)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .opacity(0.4)
+                                        }
+                                        .frame(maxHeight: 30)
+                                        
+                                        Text(criteria.contains("PCT") ? String(format: "%.1f", (Double(data.val) * 100)) : String(Int(data.val)))
+                                            .font(.callout)
+                                            .bold()
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                            }
+                        }
+                        .clipShape(.rect(cornerRadius: 10))
+                    }
+                    .chartYAxis(.hidden)
+                } else {
+                    ZStack {
+                        VStack {
+                            ForEach(chartData.indices, id: \.self) { i in
+                                Chart {
+                                    let linearGradient = LinearGradient(gradient: Gradient(colors: [chartData[i][0].color.opacity(0.4), chartData[i][0].color.opacity(0)]), startPoint: .top, endPoint: .bottom)
+                                    
+                                    ForEach(chartData[i], id: \.id) { data in
+                                        LineMark(
+                                            x: .value("Stat", Int(data.sort) ?? 0),
+                                            y: .value("Value", data.val),
+                                            series: .value("Player", data.playerID)
+                                        )
+                                        .symbol(i == 0 ? .circle : .square)
+                                        .foregroundStyle(data.color)
+                                        .interpolationMethod(.catmullRom)
+                                        
+                                        if let chartSelection {
+                                            RuleMark(x: .value("Stat", chartSelection))
+                                                .foregroundStyle(.gray.opacity(0.2))
+                                                .annotation( position: i == 0 ? .top : .bottom, overflowResolution: .init(x: .fit, y: .fit)) {
+                                                    VStack {
+                                                        Text("\(String(format: "%.1f", (chartData[i][chartSelection].val))) \(criteria)")
+                                                        Text("\(chartData[i][chartSelection].matchup)")
+                                                        Text("\(chartData[i][chartSelection].gameDate)")
+                                                    }
+                                                    .font(.footnote)
+                                                    .padding(6)
+                                                    .background(.ultraThinMaterial.opacity(0.2))
+                                                    .clipShape(.rect(cornerRadius: 16))
+                                                }
+                                        }
+                                        
+                                        AreaMark(
+                                            x: .value("Stat", Int(data.sort) ?? 0),
+                                            y: .value("Value", data.val)
+                                        )
+                                        .interpolationMethod(.catmullRom)
+                                        .foregroundStyle(linearGradient)
+                                    }
+                                }
+                            }
+                            .chartXAxis(.hidden)
+                            .chartYAxis(.hidden)
+                            .chartXSelection(value: $chartSelection)
+                        }
+                        
+                        if chartData.count > 1 {
+                            let totalChg1 = playerDataManager.getTotalChange(chartData: chartData[0])
+                            let totalChg2 = playerDataManager.getTotalChange(chartData: chartData[1])
+                            
+                            HStack {
+                                HStack {
+                                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p1ID).png")) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFit()
+                                    } placeholder: {
+                                        Image(uiImage: t1.logo)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .opacity(0.4)
+                                    }
+                                    .frame(maxHeight: 30)
+                                    
+                                    Image(systemName: playerDataManager.getChangeImage(pc: totalChg1))
+                                        .foregroundStyle(playerDataManager.getChangeTint(pc: totalChg1))
+                                    
+                                    Text("\(String(format: "%.1f", (totalChg1)))")
+                                }
+                                .frame(maxWidth: .infinity)
+                                
+                                Divider()
+                                    .foregroundStyle(.primary)
+                                    .frame(maxHeight: 30)
+                                
+                                HStack {
+                                    Image(systemName: playerDataManager.getChangeImage(pc: totalChg2))
+                                        .foregroundStyle(playerDataManager.getChangeTint(pc: totalChg2))
+                                    
+                                    Text("\(String(format: "%.1f", (totalChg2)))")
+                                    
+                                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p2ID).png")) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFit()
+                                    } placeholder: {
+                                        Image(uiImage: t2.logo)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .opacity(0.4)
+                                    }
+                                    .frame(maxHeight: 30)
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .bold()
+                            .padding(6)
+                            .background(.ultraThinMaterial.opacity(0.5))
+                            .clipShape(.rect(cornerRadius: 16))
+                            .shadow(radius: 10)
+                            .padding(.horizontal)
+                        }
+                    }
+                }
             }
             
-            d = fd
+            HStack {
+                Picker("Criteria", selection: $criteria) {
+                    ForEach(playerDataManager.compareCategories, id: \.self) {
+                        Text($0)
+                    }
+                }
+                .pickerStyle(.menu)
+                .background(.regularMaterial).clipShape(.capsule)
+                .onChange(of: criteria) {
+                    withAnimation {
+                        getCharts()
+                    }
+                }
+                
+                Picker("Data Splits", selection: $splitBy) {
+                    Text("Traditional").tag(0)
+                    Text("Trends").tag(1)
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: splitBy, {
+                    withAnimation {
+                        getCharts()
+                    }
+                })
+            }
+            .padding()
         }
-
-        return d
+        .frame(maxHeight: .infinity)
+        .overlay(content: { if !dataReady { ShimmerEffectBox() } })
+        .background(.regularMaterial)
+        .clipShape(.rect(cornerRadius: 16))
+        .padding([.bottom, .horizontal])
     }
+    
+    func getMatchupData() async {
+        await cvm.compareStats(p1ID: "\(cvm.p1!.playerID)", p2ID: "\(cvm.p2!.playerID)", criteria: criteria)
+        
+        data = [await playerDataManager.getPlayerGameStats(pID: cvm.p1!.playerID, season: season), await playerDataManager.getPlayerGameStats(pID: cvm.p2!.playerID, season: season)]
+        
+        filterData()
+    }
+    
+    func filterData() {
+        dataTotals.removeAll()
+        filteredData = [timeFrameFilter != 0 ? data[0].suffix(timeFrameFilter) : data[0], timeFrameFilter != 0 ? data[1].suffix(timeFrameFilter) : data[1]]
+        
+        for i in filteredData.indices {
+            let min = filteredData[i].reduce(0, {$0 + Int(($1.min ?? 0))})
+            let fgm = filteredData[i].reduce(0, {$0 + Int(($1.fgm ?? 0))})
+            let fga = filteredData[i].reduce(0, {$0 + Int(($1.fga ?? 0))})
+            let fg_pct = (Double(fgm)/Double(fga) * 100).formatted(.number.precision(.fractionLength(1)))
+            let fg3m = filteredData[i].reduce(0, {$0 + Int(($1.fg3m ?? 0))})
+            let fg3a = filteredData[i].reduce(0, {$0 + Int(($1.fg3a ?? 0))})
+            let fg3_pct = (Double(fg3m)/Double(fg3a) * 100).formatted(.number.precision(.fractionLength(1)))
+            let ftm = filteredData[i].reduce(0, {$0 + Int(($1.ftm ?? 0))})
+            let fta = filteredData[i].reduce(0, {$0 + Int(($1.fta ?? 0))})
+            let ft_pct = (Double(ftm)/Double(fta) * 100).formatted(.number.precision(.fractionLength(1)))
+            let oreb = filteredData[i].reduce(0, {$0 + Int(($1.oreb ?? 0))})
+            let dreb = filteredData[i].reduce(0, {$0 + Int(($1.dreb ?? 0))})
+            let reb = filteredData[i].reduce(0, {$0 + Int(($1.reb ?? 0))})
+            let ast = filteredData[i].reduce(0, {$0 + Int(($1.ast ?? 0))})
+            let stl = filteredData[i].reduce(0, {$0 + Int(($1.stl ?? 0))})
+            let blk = filteredData[i].reduce(0, {$0 + Int(($1.blk ?? 0))})
+            let tov = filteredData[i].reduce(0, {$0 + Int(($1.tov ?? 0))})
+            let pf = filteredData[i].reduce(0, {$0 + Int(($1.pf ?? 0))})
+            let pts = filteredData[i].reduce(0, {$0 + Int(($1.min ?? 0))})
+            let pts1 = ftm
+            let pts3 = fg3m * 3
+            let pts2 = pts - (pts1 + pts3)
+            let def = stl + blk
+            
+            dataTotals.append(StatTotals(age: def, gp: pts2, gs: pts3, min: min, fgm: fgm, fga: fga, fg_pct: Double(fg_pct) ?? 0, fg3m: fg3m, fg3a: fg3a, fg3_pct: Double(fg3_pct) ?? 0, ftm: ftm, fta: fta, ft_pct: Double(ft_pct) ?? 0, oreb: oreb, dreb: dreb, reb: reb, ast: ast, stl: stl, blk: blk, tov: tov, pf: pf, pts: pts))
+        }
+        
+        getCharts()
+    }
+    
+    func getCharts() {
+        // bar graph data
+        if splitBy == 0 {
+            let totals = [getChartY(criterion: criteria, playerIndex: 0), getChartY(criterion: criteria, playerIndex: 1)]
+            
+            chartData = [[GameStat(gameID: "1", gameDate: "", matchup: "", sort: cvm.p1?.firstName ?? "Player 1", val: totals[0], player: cvm.p1, color: Color(cvm.p1?.team.priColor ?? .blue)), GameStat(gameID: "2", gameDate: "", matchup: "", sort: cvm.p2?.firstName ?? "Player 2", val: totals[1], player: cvm.p2, color: Color(cvm.p2?.team.priColor ?? .red))]]
+        // line chart data
+        } else {
+            let values = [getChartY(criterion: criteria, dataSet: filteredData[0]), getChartY(criterion: criteria, dataSet: filteredData[1])]
+            
+            var cd1: [GameStat] = []
+            var cd2: [GameStat] = []
+            
+            for i in filteredData[0].indices {
+                cd1.append(GameStat(gameID: filteredData[0][i].gameID, gameDate: filteredData[0][i].gameDate, matchup: filteredData[0][i].matchup, sort: "\(i)", val: values[0][i], player: cvm.p1, color: Color(cvm.p1?.team.priColor ?? .blue)))
+            }
+            
+            for i in filteredData[1].indices {
+                cd2.append(GameStat(gameID: filteredData[1][i].gameID, gameDate: filteredData[1][i].gameDate, matchup: filteredData[1][i].matchup, sort: "\(i)", val: values[1][i], player: cvm.p2, color: Color(cvm.p2?.team.priColor ?? .red)))
+            }
+            
+            chartData = [cd1, cd2]
+        }
+    }
+    
+    func getChartY(criterion: String, dataSet: [GameStats]) -> [Double] {
+        var y : [Double] = []
+        
+        // get y
+        switch criterion {
+        case "MIN":
+            y = dataSet.map { $0.min ?? 0 }
+        case "FGM":
+            y = dataSet.map { $0.fgm ?? 0 }
+        case "FGA":
+            y = dataSet.map { $0.fga ?? 0 }
+        case "FG%":
+            y = dataSet.map { $0.fg_pct ?? 0 }
+        case "FG3M":
+            y = dataSet.map { $0.fg3m ?? 0 }
+        case "FG3A":
+            y = dataSet.map { $0.fg3a ?? 0 }
+        case "FG3%":
+            y = dataSet.map { $0.fg3_pct ?? 0 }
+        case "FTM":
+            y = dataSet.map { $0.ftm ?? 0 }
+        case "FTA":
+            y = dataSet.map { $0.fta ?? 0 }
+        case "FT%":
+            y = dataSet.map { $0.ft_pct ?? 0 }
+        case "OREB":
+            y = dataSet.map { $0.oreb ?? 0 }
+        case "DREB":
+            y = dataSet.map { $0.dreb ?? 0 }
+        case "REB":
+            y = dataSet.map { $0.reb ?? 0 }
+        case "AST":
+            y = dataSet.map { $0.ast ?? 0 }
+        case "STL":
+            y = dataSet.map { $0.stl ?? 0 }
+        case "BLK":
+            y = dataSet.map { $0.blk ?? 0 }
+        case "TOV":
+            y = dataSet.map { $0.tov ?? 0 }
+        case "PF":
+            y = dataSet.map { $0.pf ?? 0 }
+        case "+/-":
+            y = dataSet.map { $0.pm ?? 0 }
+        case "FP":
+            y = dataSet.map { $0.fantasyPts ?? 0 }
+        case "DD2":
+            y = dataSet.map { $0.DD2 ?? 0 }
+        case "TD3":
+            y = dataSet.map { $0.TD3 ?? 0 }
+        default:
+            y = dataSet.map { $0.pts ?? 0 }
+        }
+        
+        return y
+    }
+    
+    func getChartY(criterion: String, playerIndex: Int) -> Double {
+        var y : Double = 0
+        
+        if playerDataManager.totalCategories.contains(criterion) {
+            let totals = dataTotals[playerIndex]
+            
+            switch criterion {
+            case "GP":
+                y = Double(totals.gp)
+            case "GS":
+                y = Double(totals.gs)
+            case "MIN":
+                y = Double(totals.min)
+            case "FGM":
+                y = Double(totals.fgm)
+            case "FGA":
+                y = Double(totals.fga)
+            case "FG%":
+                y = totals.fg_pct
+            case "FG3M":
+                y = Double(totals.fg3m)
+            case "FG3A":
+                y = Double(totals.fg3a)
+            case "FG3%":
+                y = totals.fg3_pct
+            case "FTM":
+                y = Double(totals.ftm)
+            case "FTA":
+                y = Double(totals.fta)
+            case "FT%":
+                y = totals.ft_pct
+            case "OREB":
+                y = Double(totals.oreb)
+            case "DREB":
+                y = Double(totals.dreb)
+            case "REB":
+                y = Double(totals.reb)
+            case "AST":
+                y = Double(totals.ast)
+            case "STL":
+                y = Double(totals.stl)
+            case "BLK":
+                y = Double(totals.blk)
+            case "TOV":
+                y = Double(totals.tov)
+            case "PF":
+                y = Double(totals.pf)
+            default:
+                y = Double(totals.pts)
+            }
+        } else {
+            let dataSet = filteredData[playerIndex]
+            
+            switch criterion {
+            case "+/-":
+                y = dataSet.reduce(0, {$0 + Double(($1.pm ?? 0))})
+            case "FP":
+                y = dataSet.reduce(0, {$0 + Double(($1.fantasyPts ?? 0))})
+            case "DD2":
+                y = dataSet.reduce(0, {$0 + Double(($1.DD2 ?? 0))})
+            case "TD3":
+                y = dataSet.reduce(0, {$0 + Double(($1.TD3 ?? 0))})
+            default:
+                break
+            }
+        }
+        
+        return y
+    }
+    
+//    func getCriteria() -> [String] {
+//        var c = [String]()
+//        let totalStats = ["GP", "W", "L"]
+//        
+//        for sc in cvm.statCompare {
+//            if !sc.stat.contains("PCT") && !totalStats.contains(sc.stat) {
+//                c.append(sc.stat)
+//            }
+//        }
+//        
+//        return c
+//    }
     
     func getPerGameStat(val: String, i: Int) -> String {
         let pg = String(format: "%.1f", (Double(val) ?? 0) / gamesPlayed[i])
@@ -585,11 +804,6 @@ struct PlayerCompareView: View {
 //        return pts1 > pts2 ? "\(cvm.p1!.firstName) \(cvm.p1!.lastName)" : "\(cvm.p2!.firstName) \(cvm.p2!.lastName)"
         return pts1 > pts2 ? 1 : 2
     }
-    
-//    func getLineColor(id: Int) -> UIColor {
-//        print(id)
-//        return id == p1.playerID ? t1.priColor : t2.priColor
-//    }
 }
 
 // This is to make a rounded rectangle with specific sides rounded. Not needed right now, but may be handy later.
@@ -626,6 +840,12 @@ struct Triangle: Shape {
     }
 }
 
+struct Matchup: Decodable, Encodable, Identifiable {
+    var id = UUID()
+    
+    var p1: Player
+    var p2: Player
+}
 #Preview {
-    PlayerCompareView()
+    PlayerCompareView().environmentObject(DataManager()).environmentObject(PlayerCompareViewModel()).environmentObject(PlayerDataManager()).environmentObject(FavoritesManager())
 }

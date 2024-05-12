@@ -200,3 +200,12 @@ struct Rankings: Decodable, Encodable {
         return ["\(gp)", "\(gs)", "\(min ?? -1)", "\(fgm ?? -1)", "\(fga ?? -1)", "\(fg_pct ?? -1)", "\(fg3m ?? -1)", "\(fg3a ?? -1)", "\(fg3_pct ?? -1)", "\(ftm ?? -1)", "\(fta ?? -1)", "\(ft_pct ?? -1)", "\(oreb ?? -1)", "\(dreb ?? -1)", "\(reb ?? -1)", "\(ast ?? -1)", "\(stl ?? -1)", "\(blk ?? -1)", "\(tov ?? -1)", "\(pts ?? -1)", "\(eff ?? -1)"]
     }
 }
+
+//struct PlayerCompare {
+//    var p1GameStats: [GameStats]
+//    var p2GameStats: [GameStats]
+//    var p1StatTotals: StatTotals
+//    var p2StatTotals: StatTotals
+//}
+
+

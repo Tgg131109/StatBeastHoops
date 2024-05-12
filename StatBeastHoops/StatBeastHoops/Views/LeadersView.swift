@@ -24,9 +24,9 @@ struct LeadersView: View {
         case "AST":
             return playerDataManager.astLeaders
         case "STL":
-            return playerDataManager.blkLeaders
-        case "BLK":
             return playerDataManager.stlLeaders
+        case "BLK":
+            return playerDataManager.blkLeaders
         case "FG_PCT":
             return playerDataManager.fgLeaders
         default:
@@ -68,7 +68,7 @@ struct LeadersView: View {
                     }
                     .pickerStyle(.menu)
                     .onChange(of: criterion) { Task {
-                        await playerDataManager.getLeaders(cat: criterion)
+                        await playerDataManager.getStatLeaders(cat: criterion)
                         //                    leaders = playerDataManager.leaders
                     } }
                     

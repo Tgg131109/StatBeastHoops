@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct CompareSetupView: View {
-    @EnvironmentObject var vm : PlayerCompareViewModel
     @EnvironmentObject var playerDataManager : PlayerDataManager
     @EnvironmentObject var favoritesManager : FavoritesManager
     
@@ -65,42 +64,42 @@ struct CompareSetupView: View {
                 }
                 
                 Section("Saved Matchups") {
-                    if favoritesManager.getMatchups().isEmpty {
-                        ZStack {
-//                            Image(uiImage: Team.teamData[30].logo).resizable().aspectRatio(contentMode: .fill).opacity(0.2).padding().blur(radius: 3.0)
-                            
-                            Text("No saved matchups").foregroundStyle(.tertiary)
-                        }
-                    } else {
-                        ForEach(favoritesManager.getMatchups(), id: \.self) { player in
-                            NavigationLink {
-//                                PlayerDetailView(playerDataManager: playerDataManager, p: player)
-                            } label: {
-//                                HStack {
-//                                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
-//                                        image
-//                                            .resizable()
-//                                            .scaledToFit()
-//                                    } placeholder: {
-//                                        Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
-//                                    }
-//                                    .frame(width: 40, height: 30, alignment: .bottom)
-//
-//                                    Text("\(player.firstName) \(player.lastName)")
-//                                }
-                            }
-                        }
-                    }
+//                    if favoritesManager.getMatchups().isEmpty {
+//                        ZStack {
+////                            Image(uiImage: Team.teamData[30].logo).resizable().aspectRatio(contentMode: .fill).opacity(0.2).padding().blur(radius: 3.0)
+//                            
+//                            Text("No saved matchups").foregroundStyle(.tertiary)
+//                        }
+//                    } else {
+//                        ForEach(favoritesManager.getMatchups(), id: \.self) { player in
+//                            NavigationLink {
+////                                PlayerDetailView(playerDataManager: playerDataManager, p: player)
+//                            } label: {
+////                                HStack {
+////                                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
+////                                        image
+////                                            .resizable()
+////                                            .scaledToFit()
+////                                    } placeholder: {
+////                                        Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
+////                                    }
+////                                    .frame(width: 40, height: 30, alignment: .bottom)
+////
+////                                    Text("\(player.firstName) \(player.lastName)")
+////                                }
+//                            }
+//                        }
+//                    }
                 }
             }
             .listStyle(.insetGrouped)
             
-            Button("Compare and Apply") {
+            Button("Apply and Compare") {
                 Task {
                     await cvm.compareStats(p1ID: "\(cvm.p1!.playerID)", p2ID: "\(cvm.p2!.playerID)", criteria: "PTS")
                 }
                 
-                vm.showCompareSetup = false
+                playerDataManager.showCompareSetup = false
             }
             .buttonStyle(.borderedProminent)
             .padding()
@@ -111,7 +110,7 @@ struct CompareSetupView: View {
                 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
-                        vm.showCompareSetup = false
+                        playerDataManager.showCompareSetup = false
                     }
                 }
             }

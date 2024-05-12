@@ -633,11 +633,11 @@ struct ChartView: View {
                     .chartXSelection(value: $chartSelection)
                     .padding(.vertical)
                     
-                    let totalChg = getTotalChange()
+                    let totalChg = playerDataManager.getTotalChange(chartData: chartData)
                     
                     HStack {
-                        Image(systemName: getChangeImage(pc: totalChg))
-                            .foregroundStyle(getChangeTint(pc: totalChg))
+                        Image(systemName: playerDataManager.getChangeImage(pc: totalChg))
+                            .foregroundStyle(playerDataManager.getChangeTint(pc: totalChg))
                         
                         Text("\(String(format: "%.1f", (totalChg))) % change")
                     }
@@ -672,8 +672,8 @@ struct ChartView: View {
                             .bold()
                         
                         HStack {
-                            Image(systemName: getChangeImage(pc: game.pctChg ?? 0) )
-                                .foregroundStyle(getChangeTint(pc: game.pctChg ?? 0))
+                            Image(systemName: playerDataManager.getChangeImage(pc: game.pctChg ?? 0) )
+                                .foregroundStyle(playerDataManager.getChangeTint(pc: game.pctChg ?? 0))
                             
                             Text("\(String(format: "%.1f", (game.pctChg ?? 0))) %")
                         }
@@ -872,19 +872,19 @@ struct ChartView: View {
                 valueStr = String(player.fgm)
             case "FGA":
                 valueStr = String(player.fga)
-            case "FG_PCT", "FG %":
+            case "FG_PCT", "FG%":
                 valueStr = String(player.fg_pct)
             case "FG3M":
                 valueStr = String(player.fg3m)
             case "FG3A":
                 valueStr = String(player.fg3a)
-            case "FG3_PCT", "FG3 %":
+            case "FG3_PCT", "FG3%":
                 valueStr = String(player.fg3_pct)
             case "FTM":
                 valueStr = String(player.ftm)
             case "FTA":
                 valueStr = String(player.fta)
-            case "FT_PCT", "FT %":
+            case "FT_PCT", "FT%":
                 valueStr = String(player.ft_pct)
             case "OREB":
                 valueStr = String(player.oreb)
@@ -973,19 +973,19 @@ struct ChartView: View {
         case "FGA":
             break
         case "FG_PCT":
-            statName = "FG %"
+            statName = "FG%"
         case "FG3M":
             break
         case "FG3A":
             break
         case "FG3_PCT":
-            statName = "FG3 %"
+            statName = "FG3%"
         case "FTM":
             break
         case "FTA":
             break
         case "FT_PCT":
-            statName = "FT %"
+            statName = "FT%"
         case "OREB":
             break
         case "DREB":
@@ -1030,35 +1030,35 @@ struct ChartView: View {
         return disabled
     }
     
-    func getTotalChange() -> Double {
-        var change = 0.0
-        var chgArr = [Double]()
-        
-        for i in chartData.indices {
-            if i < chartData.count - 1 {
-                let start = chartData[i].val
-                let end = chartData[i + 1].val
-                
-                chgArr.append((end - start)/start * 100)
-            }
-        }
-        
-        change = chgArr.reduce(0.0, +)/Double(chgArr.count)
-        
-        return change
-    }
-    
-    func getChangeImage(pc: Double) -> String {
-        var img = "chart.line.uptrend.xyaxis"
-        
-        if pc < 0 {
-            img = "chart.line.downtrend.xyaxis"
-        } else if pc == 0 {
-            img = "chart.line.flattrend.xyaxis"
-        }
-        
-        return img
-    }
+//    func getTotalChange() -> Double {
+//        var change = 0.0
+//        var chgArr = [Double]()
+//        
+//        for i in chartData.indices {
+//            if i < chartData.count - 1 {
+//                let start = chartData[i].val
+//                let end = chartData[i + 1].val
+//                
+//                chgArr.append((end - start)/start * 100)
+//            }
+//        }
+//        
+//        change = chgArr.reduce(0.0, +)/Double(chgArr.count)
+//        
+//        return change
+//    }
+//    
+//    func getChangeImage(pc: Double) -> String {
+//        var img = "chart.line.uptrend.xyaxis"
+//        
+//        if pc < 0 {
+//            img = "chart.line.downtrend.xyaxis"
+//        } else if pc == 0 {
+//            img = "chart.line.flattrend.xyaxis"
+//        }
+//        
+//        return img
+//    }
     
     func getChangeTint(pc: Double) -> Color {
         var col = Color.green
@@ -1081,51 +1081,6 @@ struct PieModel: Identifiable {
     var id: String = UUID().uuidString
     var title: String
     var val: Double
-}
-
-struct GameStat : Identifiable {
-    var id: String { gameID }
-    
-    var gameID: String
-    var gameDate: String
-    var matchup: String
-    var sort: String
-    var val: Double
-    var val2: Double?
-    var pctChg: Double?
-    var color: Color
-    
-    var vsTeamID : Int {
-        var vtID = -1
-        let matchupArr = matchup.components(separatedBy: " ")
-        
-        if let tID = Team.teamData.first(where: { $0.abbr == matchupArr.last })?.teamID {
-            vtID = tID
-        }
-        
-        return vtID
-    }
-    
-    var vsTeam : Team {
-        var vt = Team.teamData[30]
-        let matchupArr = matchup.components(separatedBy: " ")
-        
-        if let t = Team.teamData.first(where: { $0.abbr == matchupArr.last }) {
-            vt = t
-        }
-        
-        return vt
-    }
-    
-    var homeAway : String {
-        let matchupArr = matchup.components(separatedBy: " ")
-        
-        if matchupArr[1] == "@" {
-            return "Away"
-        } else {
-            return "Home"
-        }
-    }
 }
 
 #Preview {

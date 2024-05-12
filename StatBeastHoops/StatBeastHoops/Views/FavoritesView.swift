@@ -72,9 +72,14 @@ struct FavoritesView: View {
                             Text("No saved matchups")
                         }
                     } else {
-                        ForEach(vm.getMatchups(), id: \.self) { player in
+                        ForEach(vm.getMatchups(), id: \.id) { matchup in
                             NavigationLink {
                             } label: {
+                                HStack {
+                                    Text(matchup.p1.firstName)
+                                    Spacer()
+                                    Text(matchup.p2.firstName)
+                                }
                             }
                         }
                     }
