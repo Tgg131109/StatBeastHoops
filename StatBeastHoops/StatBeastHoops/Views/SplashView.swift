@@ -67,20 +67,22 @@ struct SplashView: View {
     
     var loadingView: some View {
         ZStack {
-            VStack {
-                Text("StatBeast | Hoops").font(.largeTitle).fontWeight(.black)
-                ProgressView().padding().tint(LinearGradient(colors: [Color.blue, Color.red], startPoint: .top, endPoint: .bottom)).controlSize(.large)
-                Text(statusStr).italic().bold()
-            }.frame(maxWidth: .infinity, maxHeight: .infinity).background(.ultraThinMaterial).foregroundStyle(
-                LinearGradient(
-                    colors: [.teal, .primary],
-                    startPoint: .topLeading,
-                    endPoint: .bottom
-                )
-            )
+            Image(uiImage: UIImage(named: "logo")!)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
             .overlay(ShimmerEffectBox())
             
-            Text("StatBeast | Hoops").font(.largeTitle).fontWeight(.black).foregroundStyle(.ultraThickMaterial).shadow(radius: 10)
+            Image(uiImage: UIImage(named: "logo")!)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                    .frame(width: 260, height: 30)
+                    .opacity(0.5)
+                    .shadow(radius: 10)
+            
+            Text("StatBeast | Hoops")
+                .font(.largeTitle)
+                .fontWeight(.light)
+                .shadow(radius: 10)
         }
     }
 }

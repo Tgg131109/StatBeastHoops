@@ -1,5 +1,5 @@
 //
-//  FavoritesView.swift
+//  FollowingView.swift
 //  StatBeastHoops
 //
 //  Created by Toby Gamble on 3/4/24.
@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-struct FavoritesView: View {
+struct FollowingView: View {
     @EnvironmentObject var vm : FavoritesManager
     @EnvironmentObject var teamDataManager : TeamDataManager
     
     var body: some View {
-//        NavigationStack {
+        NavigationStack {
             List {
                 Section("Players") {
                     if vm.getPlayers().isEmpty {
@@ -76,8 +76,29 @@ struct FavoritesView: View {
                             NavigationLink {
                             } label: {
                                 HStack {
+                                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(matchup.p1.playerID).png")) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFit()
+                                    } placeholder: {
+                                        Image(uiImage: matchup.p1.team.logo).resizable().aspectRatio(contentMode: .fill)
+                                    }
+                                    .frame(width: 40, height: 30, alignment: .bottom)
+                                    
+                                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(matchup.p2.playerID).png")) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFit()
+                                    } placeholder: {
+                                        Image(uiImage: matchup.p2.team.logo).resizable().aspectRatio(contentMode: .fill)
+                                    }
+                                    .frame(width: 40, height: 30, alignment: .bottom)
+                                    .padding(.leading, -30)
+                                    
                                     Text(matchup.p1.firstName)
-                                    Spacer()
+                                    
+                                    Text("vs").foregroundStyle(.secondary)
+                                    
                                     Text(matchup.p2.firstName)
                                 }
                             }
@@ -86,10 +107,22 @@ struct FavoritesView: View {
                 }
             }
             .listStyle(.insetGrouped)
-//        }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Text("Following").bold().foregroundStyle(.tertiary)
+                }
+                
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack {
+                        NavButtonsView()
+                    }
+                }
+            }
+            .toolbarTitleDisplayMode(.inline)
+        }
     }
 }
 
 #Preview {
-    FavoritesView().environmentObject(PlayerDataManager()).environmentObject(FavoritesManager())
+    FollowingView().environmentObject(PlayerDataManager()).environmentObject(FavoritesManager())
 }

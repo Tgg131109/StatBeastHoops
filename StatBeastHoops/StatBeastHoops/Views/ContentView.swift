@@ -11,89 +11,43 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var settingsManager : SettingsManager
     
-    @State private var faveTeamID : Int = Team.teamData[30].teamID
-    @State private var searchText = ""
-    @State private var searchScope = "Current"
-
-    let searchScopes = ["All", "Players", "Teams"]
-    
     var tintColor : UIColor {
-        return Team.teamData.first(where: { $0.teamID == faveTeamID })?.priColor ?? Player.demoPlayer.team.priColor
+        return settingsManager.settingsDict["accentPref"] as! Bool ? Team.teamData.first(where: { $0.teamID == settingsManager.settingsDict["faveTeamID"] as! Int })?.priColor ?? Player.demoPlayer.team.priColor : UIColor(.accentColor)
     }
     
     var body: some View {
         TabView {
-            NavigationView {
-                TodayView()
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            VStack(alignment: .leading) {
-                                Text("StatBeast | Hoops")
-                                    .bold()
-                                    .foregroundStyle(.tertiary)
-                                
-                                Text(Date.now, format: .dateTime.day().month().year())
-                                    .foregroundStyle(.tertiary)
-                                    .font(.footnote)
-                            }
-                        }
-                        
-                        ToolbarItem(placement: .topBarTrailing) {
-                            HStack {
-                                NavButtonsView()
-                            }
-                        }
-                    }
-                    .toolbarTitleDisplayMode(.inline)
-            }.tabItem {
-                let components = Calendar.current.dateComponents([.day], from: Date.now)
-                let symbol = "\(components.day ?? 1).square"
-                
-                Label("Today", systemImage: symbol)
-                
-            }
+            TodayView()
+                .tabItem {
+                    let components = Calendar.current.dateComponents([.day], from: Date.now)
+                    let symbol = "\(components.day ?? 1).square"
+                    
+                    Label("Today", systemImage: symbol)
+                }
             
-            NavigationView {
-                FavoritesView()
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Text("Following").bold().foregroundStyle(.tertiary)
-                        }
-                        
-                        ToolbarItem(placement: .topBarTrailing) {
-                            HStack {
-                                NavButtonsView()
-                            }
-                        }
-                    }
-                    .toolbarTitleDisplayMode(.inline)
-            }.tabItem { Label("Following", systemImage: "heart.text.square") }
-                
+            FollowingView().tabItem { Label("Following", systemImage: "heart.text.square") }
+            
             PlayerCompareView()
                 .tabItem { Label("Compare", systemImage: "person.line.dotted.person") }
             
             PlayersView()
                 .tabItem { Label("Players", systemImage: "person.3") }
             
-            NavigationView {
-                TeamsView()
-                    
-            }
-            .navigationViewStyle(.stack)
-            .tabItem {
-                Label {
-                    Text("Teams")
-                } icon: {
-                    TabBarLogoView(myTeamID: $faveTeamID)
+            TeamsView()
+                .tabItem {
+                    if (settingsManager.settingsDict["faveTeamID"] as! Int) < 32 || !(settingsManager.settingsDict["tabbarPref"] as! Bool) {
+                        Label("Teams", systemImage: "basketball")
+                    } else {
+                        Label { Text("Teams") } icon: { TabBarLogoView() }
+                    }
                 }
-            }
         }
         .tint(Color(tintColor))
         .onAppear(perform: {
-            faveTeamID = settingsManager.settingsDict["faveTeamID"] as? Int ?? Team.teamData[30].teamID
+//            faveTeamID = settingsManager.settingsDict["faveTeamID"] as! Int
         })
         .sheet(isPresented: $settingsManager.showSettingsPage) {
-            SettingsView(myTeamID: $faveTeamID)
+            SettingsView().tint(Color(tintColor))
         }
     }
 }

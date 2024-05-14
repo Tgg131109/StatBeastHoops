@@ -42,10 +42,10 @@ class PlayerDataManager : ObservableObject {
     //    @Published var progress: Double = 0.0
     
     // Stat Compare
-    @Published var sp: Player? = nil
-    @Published var p1: Player? = nil
-    @Published var p2: Player? = nil
-    @Published var showCompareSetup = false
+//    @Published var sp: Player? = nil
+    @Published var compareP1: Player = Player.demoPlayer
+    @Published var compareP2: Player = Player.demoPlayer
+//    @Published var showCompareSetup = false
     
 //    @Published var currentDetent = PresentationDetent.height(400)
 //    @Published var needsOverlay = true
@@ -57,8 +57,6 @@ class PlayerDataManager : ObservableObject {
     let leaderSeasonTypes = ["Preseason", "Regular Season", "Playoffs"]
     let seasonTypes = ["Preseason","Regular Season", "Postseason", "All-Star", "Play In", "In-Season Tournament"]
     let totalCategories = ["GP", "GS", "MIN", "FGM", "FGA", "FG%", "FG3M", "FG3A", "FG3%", "FTM", "FTA", "FT%", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TOV", "PF", "PTS"]
-    
-    let compareCategories = ["GP", "GS", "MIN", "FGM", "FGA", "FG%", "FG3M", "FG3A", "FG3%", "FTM", "FTA", "FT%", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TOV", "PF", "PTS", "+/-", "FP", "DD2", "TD3"]
     
     init() {
         for y in 2002...2023 {
@@ -525,7 +523,257 @@ class PlayerDataManager : ObservableObject {
         return gameStats
     }
     
+    func compareStats(season: String, st: String = "Regular Season") async -> [PlayerCompare] {
+        var p1ID = compareP1.playerID
+        var p2ID = compareP2.playerID
+        var matchup = Matchup(p1: compareP1, p2: compareP2)
+        var statCompare = [StatCompare]()
+        var onOffCourtP1 = [StatCompare]()
+        var onOffCourtP2 = [StatCompare]()
+        var oppOnCourt = [StatCompare]()
+        var oppOffCourt = [StatCompare]()
+        var p1GameStats = [GameStats]()
+        var p2GameStats = [GameStats]()
+        
+        let data = await getData(url: "https://stats.nba.com/stats/playervsplayer?DateFrom=&DateTo=&GameSegment=&LastNGames=0&LeagueID=&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PaceAdjust=N&PerMode=Totals&Period=0&PlayerID=\(p1ID)&PlusMinus=N&Rank=N&Season=\(season)&SeasonSegment=&SeasonType=\(st)&VsConference=&VsDivision=&VsPlayerID=\(p2ID)")
+        
+        if !data.isEmpty {
+            // Overall stat data for each selected player.
+            if data[0]["name"] as! String == "Overall" {
+                guard let headers = data[0]["headers"] as? [Any],
+                      let statData = data[0]["rowSet"] as? [[Any]]
+                else {
+                    print("This isn't working")
+                    return []
+                }
+                
+                var sd = statData
+                var sc = [StatCompare]()
+                
+                while sd.count < 2 {
+                    if sd.count == 1 {
+                        for i in headers.indices {
+                            if headers[i] as! String == "PLAYER_ID" {
+                                if !(sd[0][i] as? Int == Int(p1ID)) {
+                                    sd.removeAll()
+                                    sd.append(Player.emptyData)
+                                    sd.append(statData[0])
+                                } else {
+                                    sd.append(Player.emptyData)
+                                }
+                            }
+                        }
+                        
+                    } else {
+                        sd.append(Player.emptyData)
+                    }
+                }
+                
+                for i in headers.indices  {
+                    var v1 = "\(sd[0][i])"
+                    var v2 = "\(sd[1][i])"
+                    
+                    if (headers[i] as! String).contains("PCT") {
+                        for p in 0...1 {
+                            if let d = sd[p][i] as? Double {
+//                                    print("\(d * 100) %")
+                                if p == 0 {
+                                    v1 = "\(String(format: "%.1f", d * 100)) %"
+                                } else {
+                                    v2 = "\(String(format: "%.1f", d * 100)) %"
+                                }
+                            }
+                        }
+                    }
+                    
+                    if headers[i] as! String == "MIN" {
+                        for p in 0...1 {
+                            if let d = sd[p][i] as? Double {
+//                                    print(d.rounded())
+//                                    print(String(format: "%.1f", d))
+                                if p == 0 {
+                                    v1 = String(format: "%.1f", d)
+                                } else {
+                                    v2 = String(format: "%.1f", d)
+                                }
+                            }
+                        }
+                    }
+                    
+                    sc.append(StatCompare(id: i, stat: headers[i] as! String, value1: v1, value2: v2))
+                }
+                
+                sc.removeAll(where: {$0.stat == "GROUP_SET" || $0.stat == "GROUP_VALUE" || $0.stat == "PLAYER_ID" || $0.stat == "PLAYER_NAME"})
+                
+                statCompare = sc.sorted(by: { $1.id > $0.id })
+            }
+            
+            // Vs opponent data.
+            if data[1]["name"] as! String == "OnOffCourt" {
+                guard let headers = data[1]["headers"] as? [Any],
+                      let statData = data[1]["rowSet"] as? [[Any]]
+                else {
+                    print("This isn't working")
+                    return []
+                }
+                
+                var sd = statData
+                var sc = [StatCompare]()
+                
+                while sd.count < 2 {
+                    sd.append(Player.emptyVsData)
+                }
+                
+                for i in headers.indices  {
+                    var v1 = "\(sd[0][i])"
+                    var v2 = "\(sd[1][i])"
+                    
+                    if (headers[i] as! String).contains("PCT") {
+                        for p in 0...1 {
+                            if let d = sd[p][i] as? Double {
+//                                    print("\(d * 100) %")
+                                if p == 0 {
+                                    v1 = "\(String(format: "%.1f", d * 100)) %"
+                                } else {
+                                    v2 = "\(String(format: "%.1f", d * 100)) %"
+                                }
+                            }
+                        }
+                    }
+                    
+                    if headers[i] as! String == "MIN" {
+                        for p in 0...1 {
+                            if let d = sd[p][i] as? Double {
+//                                    print(d.rounded())
+//                                    print(String(format: "%.1f", d))
+                                if p == 0 {
+                                    v1 = String(format: "%.1f", d)
+                                } else {
+                                    v2 = String(format: "%.1f", d)
+                                }
+                            }
+                        }
+                    }
+
+                    sc.append(StatCompare(id: i, stat: headers[i] as! String, value1: v1, value2: v2))
+                }
+                
+                sc.removeAll(where: { $0.stat == "GROUP_SET" || $0.stat == "GROUP_VALUE" || $0.stat == "PLAYER_ID" || $0.stat == "PLAYER_NAME" || $0.stat == "VS_PLAYER_ID" || $0.stat == "VS_PLAYER_NAME" || $0.stat == "COURT_STATUS" })
+                
+                onOffCourtP1 = sc.sorted(by: { $1.id > $0.id })
+            }
+            
+            // Opponent vs data (reverse P1 and P2 ids)
+            onOffCourtP2 = await getOpponentOnOff(p1ID: p2ID, p2ID: p1ID, onOffCourtP1: onOffCourtP1).sorted(by: { $1.id > $0.id })
+            
+            for i in onOffCourtP1.indices {
+                oppOnCourt.append(StatCompare(id: onOffCourtP1[i].id, stat: onOffCourtP1[i].stat, value1: onOffCourtP1[i].value1, value2: onOffCourtP2[i].value1))
+                oppOffCourt.append(StatCompare(id: onOffCourtP1[i].id, stat: onOffCourtP1[i].stat, value1: onOffCourtP1[i].value2, value2: onOffCourtP2[i].value2))
+            }
+            
+            p1GameStats = await getPlayerGameStats(pID: p1ID, season: season)
+            p2GameStats = await getPlayerGameStats(pID: p2ID, season: season)
+            
+            return [PlayerCompare(matchup: matchup, statCompare: statCompare, onOffCourtP1: onOffCourtP1, onOffCourtP2: onOffCourtP2, oppOnCourt: oppOnCourt, oppOffCourt: oppOffCourt, p1GameStats: p1GameStats, p2GameStats: p2GameStats)]
+        } else {
+            return []
+        }
+    }
     
+    func getOpponentOnOff(p1ID: Int, p2ID: Int, onOffCourtP1: [StatCompare]) async -> [StatCompare] {
+        var sc = [StatCompare]()
+        
+        // Validate URL.
+        guard let validURL = URL(string: "https://stats.nba.com/stats/playervsplayer?DateFrom=&DateTo=&GameSegment=&LastNGames=0&LeagueID=&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PaceAdjust=N&PerMode=Totals&Period=0&PlayerID=\(p1ID)&PlusMinus=N&Rank=N&Season=2023-24&SeasonSegment=&SeasonType=Regular+Season&VsConference=&VsDivision=&VsPlayerID=\(p2ID)")
+        else { fatalError("Invalid URL")}
+        
+        var urlRequest = URLRequest(url: validURL)
+        urlRequest.setValue("https://stats.nba.com",forHTTPHeaderField: "Referer")
+        
+        do {
+            let (validData, response) = try await URLSession.shared.data(for: urlRequest)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 // 200 = OK
+            else {
+                DispatchQueue.main.async {
+                    // Present alert on main thread if there is an error with the URL.
+                }
+                
+                print("JSON object creation failed.")
+                return []
+            }
+            
+            // Create json Object from downloaded data above and cast as [String: Any].
+            if let jsonObj = try JSONSerialization.jsonObject(with: validData, options: .mutableContainers) as? [String: Any] {
+                guard let data = jsonObj["resultSets"] as? [[String: Any]]
+                else {
+                    print("This isn't working")
+                    return []
+                }
+                
+                // Vs opponent data.
+                if data[1]["name"] as! String == "OnOffCourt" {
+                    guard let headers = data[1]["headers"] as? [Any],
+                          let statData = data[1]["rowSet"] as? [[Any]]
+                    else {
+                        print("This isn't working")
+                        return []
+                    }
+                    
+                    var sd = statData
+                    
+                    while sd.count < 2 {
+                        sd.append(Player.emptyVsData)
+                    }
+                    
+                    for i in headers.indices  {
+                        var v1 = "\(sd[0][i])"
+                        var v2 = "\(sd[1][i])"
+                        
+                        if (headers[i] as! String).contains("PCT") {
+                            for p in 0...1 {
+                                if let d = sd[p][i] as? Double {
+                                    if p == 0 {
+                                        v1 = "\(String(format: "%.1f", d * 100)) %"
+                                    } else {
+                                        v2 = "\(String(format: "%.1f", d * 100)) %"
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if headers[i] as! String == "MIN" {
+                            for p in 0...1 {
+                                if let d = sd[p][i] as? Double {
+                                    if p == 0 {
+                                        v1 = String(format: "%.1f", d)
+                                    } else {
+                                        v2 = String(format: "%.1f", d)
+                                    }
+                                }
+                            }
+                        }
+
+                        sc.append(StatCompare(id: i, stat: headers[i] as! String, value1: v1, value2: v2))
+                    }
+                    
+                    sc.removeAll(where: { $0.stat == "GROUP_SET" || $0.stat == "GROUP_VALUE" || $0.stat == "PLAYER_ID" || $0.stat == "PLAYER_NAME" || $0.stat == "VS_PLAYER_ID" || $0.stat == "VS_PLAYER_NAME" || $0.stat == "COURT_STATUS" })
+                    
+//                    for i in onOffCourtP1.indices {
+//                        self.oppOnCourt.append(StatCompare(id: onOffCourtP1[i].id, stat: onOffCourtP1[i].stat, value1: onOffCourtP1[i].value1, value2: sc[i].value1))
+//                        self.oppOffCourt.append(StatCompare(id: onOffCourtP1[i].id, stat: onOffCourtP1[i].stat, value1: onOffCourtP1[i].value2, value2: sc[i].value2))
+//                    }
+                    
+//                    self.compareReady = true
+                }
+            }
+        } catch {
+            return []
+        }
+        
+        return sc
+    }
     
     func getData(url: String) async -> [[String: Any]] {
         var data : [[String: Any]] = []
@@ -566,47 +814,5 @@ class PlayerDataManager : ObservableObject {
         }
         
         return data
-    }
-    
-    func getTotalChange(chartData : [GameStat]) -> Double {
-        var change = 0.0
-        var chgArr = [Double]()
-        
-        for i in chartData.indices {
-            if i < chartData.count - 1 {
-                let start = chartData[i].val
-                let end = chartData[i + 1].val
-                
-                chgArr.append((end - start)/start * 100)
-            }
-        }
-        
-        change = chgArr.reduce(0.0, +)/Double(chgArr.count)
-        
-        return change
-    }
-    
-    func getChangeImage(pc: Double) -> String {
-        var img = "chart.line.uptrend.xyaxis"
-        
-        if pc < 0 {
-            img = "chart.line.downtrend.xyaxis"
-        } else if pc == 0 {
-            img = "chart.line.flattrend.xyaxis"
-        }
-        
-        return img
-    }
-    
-    func getChangeTint(pc: Double) -> Color {
-        var col = Color.green
-        
-        if pc < 0 {
-            col = Color.red
-        } else if pc == 0 {
-            col = Color.primary
-        }
-        
-        return col
     }
 }

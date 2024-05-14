@@ -11,6 +11,8 @@ import Charts
 struct ChartView: View {
     @EnvironmentObject var playerDataManager : PlayerDataManager
     
+    @StateObject var cvm = CompareViewModel()
+    
     @State var p: Player
     @State var selectedStats : [StatTotals]
     @State var data : [GameStats]
@@ -633,11 +635,11 @@ struct ChartView: View {
                     .chartXSelection(value: $chartSelection)
                     .padding(.vertical)
                     
-                    let totalChg = playerDataManager.getTotalChange(chartData: chartData)
+                    let totalChg = cvm.getTotalChange(chartData: chartData)
                     
                     HStack {
-                        Image(systemName: playerDataManager.getChangeImage(pc: totalChg))
-                            .foregroundStyle(playerDataManager.getChangeTint(pc: totalChg))
+                        Image(systemName: cvm.getChangeImage(pc: totalChg))
+                            .foregroundStyle(cvm.getChangeTint(pc: totalChg))
                         
                         Text("\(String(format: "%.1f", (totalChg))) % change")
                     }
@@ -672,8 +674,8 @@ struct ChartView: View {
                             .bold()
                         
                         HStack {
-                            Image(systemName: playerDataManager.getChangeImage(pc: game.pctChg ?? 0) )
-                                .foregroundStyle(playerDataManager.getChangeTint(pc: game.pctChg ?? 0))
+                            Image(systemName: cvm.getChangeImage(pc: game.pctChg ?? 0) )
+                                .foregroundStyle(cvm.getChangeTint(pc: game.pctChg ?? 0))
                             
                             Text("\(String(format: "%.1f", (game.pctChg ?? 0))) %")
                         }

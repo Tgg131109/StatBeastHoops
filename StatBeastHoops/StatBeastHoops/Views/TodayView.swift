@@ -14,161 +14,166 @@ struct TodayView: View {
     @State private var seasonType = "Regular Season"
     @State private var dataReady = true
     
-//    var ptsLeaders: [Player] {
-//        return Array(playerDataManager.ptsLeaders.prefix(5))
-//    }
-    
-//    var rebLeaders: [Player] {
-//        return Array(playerDataManager.rebLeaders.prefix(5))
-//    }
-    
-//    var astLeaders: [Player] {
-//        return Array(playerDataManager.astLeaders.prefix(5))
-//    }
-    
-//    var blkLeaders: [Player] {
-//        return Array(playerDataManager.blkLeaders.prefix(5))
-//    }
-    
-//    var stlLeaders: [Player] {
-//        return Array(playerDataManager.stlLeaders.prefix(5))
-//    }
-    
-//    var fgLeaders: [Player] {
-//        return Array(playerDataManager.fgLeaders.prefix(5))
-//    }
-    
     var todaysGames: [Game] {
         return teamDataManager.todaysGames
     }
     
     var body: some View {
-        ZStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    Section {
-                        GridRow(dataReady: $dataReady, criteria: ["PTS", "REB"], leaders: [Array(playerDataManager.ptsLeaders.prefix(5)), Array(playerDataManager.rebLeaders.prefix(5))])
-                    } header: {
-                        HeaderView(stats: ["Points", "Rebounds"])
+        NavigationStack {
+            ZStack {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                            Section {
+                                GridRow(dataReady: $dataReady, criteria: ["PTS", "REB"], leaders: [Array(playerDataManager.ptsLeaders.prefix(5)), Array(playerDataManager.rebLeaders.prefix(5))])
+                            } header: {
+                                HeaderView(stats: ["Points", "Rebounds"])
+                            }
+                            
+                            Section {
+                                GridRow(dataReady: $dataReady, criteria: ["AST", "BLK"], leaders: [Array(playerDataManager.astLeaders.prefix(5)), Array(playerDataManager.blkLeaders.prefix(5))])
+                            } header: {
+                                HeaderView(stats: ["Assists", "Blocks"])
+                            }
+                            
+                            Section {
+                                GridRow(dataReady: $dataReady, criteria: ["STL", "FG_PCT"], leaders: [Array(playerDataManager.stlLeaders.prefix(5)), Array(playerDataManager.fgLeaders.prefix(5))])
+                            } header: {
+                                HeaderView(stats: ["Steals", "FG %"])
+                            }
+                        }
+                        .id(1)
                     }
-                    
-                    Section {
-                        GridRow(dataReady: $dataReady, criteria: ["AST", "BLK"], leaders: [Array(playerDataManager.astLeaders.prefix(5)), Array(playerDataManager.blkLeaders.prefix(5))])
-                    } header: {
-                        HeaderView(stats: ["Assists", "Blocks"])
-                    }
-                    
-                    Section {
-                        GridRow(dataReady: $dataReady, criteria: ["STL", "FG_PCT"], leaders: [Array(playerDataManager.stlLeaders.prefix(5)), Array(playerDataManager.fgLeaders.prefix(5))])
-                    } header: {
-                        HeaderView(stats: ["Steals", "FG %"])
+                    .padding(.top)
+                    .scrollIndicators(.hidden)
+                    .safeAreaPadding(EdgeInsets(top: 30, leading: 0, bottom: 140, trailing: 0))
+                    .onChange(of: seasonType) {
+                        withAnimation {
+                            proxy.scrollTo(1, anchor: .top)
+                        }
                     }
                 }
-                .defaultScrollAnchor(.top)
-            }
-            .padding(.top)
-            .scrollIndicators(.hidden)
-            .safeAreaPadding(EdgeInsets(top: 30, leading: 0, bottom: 140, trailing: 0))
-            
-            VStack(spacing: 0) {
-                HStack {
-                    Text("Today's Leaders")
+                
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("Today's Leaders")
+                        
+                        Spacer()
+                        
+                        Menu {
+                            Picker("Season Type", selection: $seasonType) {
+                                ForEach(playerDataManager.leaderSeasonTypes, id: \.self) {
+                                    Text($0)
+                                }
+                            }
+                            .background(.clear)
+                            .onChange(of: seasonType) { Task {
+                                dataReady = false
+                                _ = await playerDataManager.getAllLeaders(st: seasonType)
+                                dataReady = true
+                            } }
+                        } label: {
+                            Text(seasonType)
+                                .font(.subheadline)
+                                .tint(.secondary)
+                        }
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .bold()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.vertical, 5)
+                    .background(.ultraThinMaterial)
                     
                     Spacer()
                     
-                    Menu {
-                        Picker("Season Type", selection: $seasonType) {
-                            ForEach(playerDataManager.leaderSeasonTypes, id: \.self) {
-                                Text($0)
-                            }
-                        }
-                        .background(.clear)
-                        .onChange(of: seasonType) { Task {
-                            dataReady = false
-                            _ = await playerDataManager.getAllLeaders(st: seasonType)
-                            dataReady = true
-                        } }
-                    } label: {
-                        Text(seasonType)
-                            .font(.subheadline)
-                            .tint(.secondary)
+                    HStack {
+                        Text("Today's Games")
                     }
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .bold()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal)
-                .padding(.vertical, 5)
-                .background(.ultraThinMaterial)
-                
-                Spacer()
-                
-                HStack {
-                    Text("Today's Games")
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .bold()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading)
-                .padding(.vertical, 5)
-                .background(.ultraThinMaterial)
-                
-                Divider()
-                
-                if todaysGames.isEmpty {
-                    Text("No games today")
-                        .font(.title2)
-                        .fontWeight(.thin)
-                        .foregroundStyle(.secondary)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                } else {
-                    ScrollView(.horizontal) {
-                        HStack(spacing: 10) {
-                            ForEach(todaysGames.indices, id: \.self) { i in
-                                VStack {
-                                    HStack {
-                                        let ht = Team.teamData.first(where: { $0.teamID == todaysGames[i].homeTeamID})
-                                        
-                                        Image(uiImage: ht!.logo).resizable().frame(width: 20, height: 20)
-                                        Text("\(ht!.abbr)")
-                                        Spacer()
-                                        Text("\(todaysGames[i].homeTeamScore)").bold()
-                                    }
-                                    
-                                    HStack {
-                                        let at = Team.teamData.first(where: { $0.teamID == todaysGames[i].awayTeamID})
-                                        
-                                        Image(uiImage: at!.logo).resizable().frame(width: 20, height: 20)
-                                        Text("\(at!.abbr)")
-                                        Spacer()
-                                        Text("\(todaysGames[i].awayTeamScore)").bold()
-                                    }
-                                    
-                                    Divider().padding(.top, -4)
-                                    
-                                    Text(todaysGames[i].status).font(.caption2)
-                                }
-                                .padding(.vertical, 5)
-                                .padding(.horizontal, 10)
-                                .background(content: {
-                                    RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial)
-                                        .shadow(radius: 5)
-                                })
-                                .padding(.vertical, 10)
-                                
-                                if i < todaysGames.count - 1 {
-                                    Divider().frame(maxHeight: 100)
-                                }
-                            }
-                        }.padding(.horizontal, 20)
-                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .bold()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading)
+                    .padding(.vertical, 5)
                     .background(.ultraThinMaterial)
-                    .scrollIndicators(.hidden)
+                    
+                    Divider()
+                    
+                    if todaysGames.isEmpty {
+                        Text("No games today")
+                            .font(.title2)
+                            .fontWeight(.thin)
+                            .foregroundStyle(.secondary)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        ScrollView(.horizontal) {
+                            HStack(spacing: 10) {
+                                ForEach(todaysGames.indices, id: \.self) { i in
+                                    VStack {
+                                        HStack {
+                                            let ht = Team.teamData.first(where: { $0.teamID == todaysGames[i].homeTeamID})
+                                            
+                                            Image(uiImage: ht!.logo).resizable().frame(width: 20, height: 20)
+                                            Text("\(ht!.abbr)")
+                                            Spacer()
+                                            Text("\(todaysGames[i].homeTeamScore)").bold()
+                                        }
+                                        
+                                        HStack {
+                                            let at = Team.teamData.first(where: { $0.teamID == todaysGames[i].awayTeamID})
+                                            
+                                            Image(uiImage: at!.logo).resizable().frame(width: 20, height: 20)
+                                            Text("\(at!.abbr)")
+                                            Spacer()
+                                            Text("\(todaysGames[i].awayTeamScore)").bold()
+                                        }
+                                        
+                                        Divider().padding(.top, -4)
+                                        
+                                        Text(todaysGames[i].status).font(.caption2)
+                                    }
+                                    .padding(.vertical, 5)
+                                    .padding(.horizontal, 10)
+                                    .background(content: {
+                                        RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial)
+                                            .shadow(radius: 5)
+                                    })
+                                    .padding(.vertical, 10)
+                                    
+                                    if i < todaysGames.count - 1 {
+                                        Divider().frame(maxHeight: 100)
+                                    }
+                                }
+                            }.padding(.horizontal, 20)
+                        }
+                        .background(.ultraThinMaterial)
+                        .scrollIndicators(.hidden)
+                    }
                 }
             }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    VStack(alignment: .leading) {
+                        Text("StatBeast | Hoops")
+                            .bold()
+                            .foregroundStyle(.tertiary)
+                        
+                        Text(Date.now, format: .dateTime.day().month().year())
+                            .foregroundStyle(.tertiary)
+                            .font(.footnote)
+                    }
+                }
+                
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack {
+                        NavButtonsView()
+                    }
+                }
+            }
+            .toolbarTitleDisplayMode(.inline)
         }
     }
 }

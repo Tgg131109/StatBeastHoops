@@ -19,6 +19,7 @@ struct PlayerSearchView: View {
     @State private var searchScope = "Current"
     @State private var selection: Set<String> = []
 //    @State private var selection: Int?
+    @Binding var dataReady: Bool
     
     var p : Int
     
@@ -105,8 +106,8 @@ struct PlayerSearchView: View {
                     let p1 = playerDataManager.allPlayers.first(where: { $0.id == selection.sorted()[0] })
                     let p2 = playerDataManager.allPlayers.first(where: { $0.id == selection.sorted()[1] })
                     
-                    cvm.p1 = p1
-                    cvm.p2 = p2
+                    cvm.p1 = p1 ?? Player.demoPlayer
+                    cvm.p2 = p2 ?? Player.demoPlayer
                     
                     self.presentationMode.wrappedValue.dismiss()
                 }
@@ -118,15 +119,17 @@ struct PlayerSearchView: View {
                     let p1 = playerDataManager.allPlayers.first(where: { $0.id == selection.sorted()[0] })
                     let p2 = playerDataManager.allPlayers.first(where: { $0.id == selection.sorted()[1] })
                     
-                    cvm.p1 = p1
-                    cvm.p2 = p2
+                    cvm.p1 = p1 ?? Player.demoPlayer
+                    cvm.p2 = p2 ?? Player.demoPlayer
                     
                     Task {
-                        await cvm.compareStats(p1ID: "\(cvm.p1!.playerID)", p2ID: "\(cvm.p2!.playerID)", criteria: "PTS")
-                        
+                        dataReady = false
+                        await cvm.compareStats(p1ID: "\(cvm.p1.playerID)", p2ID: "\(cvm.p2.playerID)", criteria: "PTS")
+                        cvm.updateCharts = true
+                        dataReady = true
                     }
                     
-                    playerDataManager.showCompareSetup = false
+                    cvm.showCompareSetup = false
                 }
                 .disabled(selection.count != 2)
                 .buttonStyle(.borderedProminent)
@@ -144,13 +147,8 @@ struct PlayerSearchView: View {
             searchText = ""
         }
         .onAppear(perform: {
-            if let p1ID = cvm.p1?.id {
-                selection.insert(p1ID)
-            }
-            
-            if let p2ID = cvm.p2?.id {
-                selection.insert(p2ID)
-            }
+            selection.insert(cvm.p1.id)
+            selection.insert(cvm.p2.id)
         })
     }
     
@@ -160,5 +158,5 @@ struct PlayerSearchView: View {
 }
 
 #Preview {
-    PlayerSearchView(cvm: CompareViewModel(), p: 1)
+    PlayerSearchView(cvm: CompareViewModel(), dataReady: .constant(true), p: 1).environmentObject(PlayerDataManager())
 }

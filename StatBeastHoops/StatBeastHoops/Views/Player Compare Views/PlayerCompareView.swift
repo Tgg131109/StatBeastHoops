@@ -33,15 +33,15 @@ struct PlayerCompareView: View {
     @State private var criteria = "PTS"
     
     var p1ID : Int {
-        return cvm.p1!.playerID
+        return cvm.p1.playerID
     }
     
     var p2ID : Int {
-        return cvm.p2!.playerID
+        return cvm.p2.playerID
     }
     
     var t1 : Team {
-        if let team = Team.teamData.first(where: { $0.teamID == cvm.p1?.teamID }) {
+        if let team = Team.teamData.first(where: { $0.teamID == cvm.p1.teamID }) {
             return team
         } else {
             return Team.teamData[30]
@@ -49,7 +49,7 @@ struct PlayerCompareView: View {
     }
     
     var t2 : Team {
-        if let team = Team.teamData.first(where: { $0.teamID == cvm.p2?.teamID }) {
+        if let team = Team.teamData.first(where: { $0.teamID == cvm.p2.teamID }) {
             return team
         } else {
             return Team.teamData[30]
@@ -72,7 +72,7 @@ struct PlayerCompareView: View {
     }
     
     var matchup: Matchup {
-        return Matchup(p1: cvm.p1!, p2: cvm.p2!)
+        return Matchup(p1: cvm.p1, p2: cvm.p2)
     }
     
     var isFav : Bool {
@@ -109,6 +109,12 @@ struct PlayerCompareView: View {
                     
                     chartCard
                         .tag(2)
+                        .onChange(of: cvm.updateCharts) {
+                            if cvm.updateCharts {
+                                getCharts()
+                                cvm.updateCharts = false
+                            }
+                        }
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
@@ -132,7 +138,7 @@ struct PlayerCompareView: View {
                         }
                         
                         Button {
-                            playerDataManager.showCompareSetup = true
+                            cvm.showCompareSetup = true
                             statSetType = 0
                         } label: {
                             Image(systemName: "slider.horizontal.3")
@@ -142,12 +148,12 @@ struct PlayerCompareView: View {
             }
             .toolbarTitleDisplayMode(.inline)
         }
-        .sheet(isPresented: $playerDataManager.showCompareSetup) {
-            CompareSetupView(cvm: cvm)
+        .sheet(isPresented: $cvm.showCompareSetup) {
+            CompareSetupView(cvm: cvm, dataReady: $dataReady)
         }
         .onAppear(perform: {
             // Comment this entire onAppear section to prevent preview from crashing while developing.
-            if cvm.p1!.playerID == cvm.p2!.playerID {
+            if cvm.p1.playerID == cvm.p2.playerID {
                 cvm.p1 = playerDataManager.ptsLeaders[0]
                 cvm.p2 = playerDataManager.ptsLeaders[1]
             }
@@ -214,15 +220,15 @@ struct PlayerCompareView: View {
             HStack {
                 HStack {
                     Circle().fill(Color(t1.priColor)).frame(width: 10, height: 10)
-                    Text("\(cvm.p1!.firstName) \(cvm.p1!.lastName)").font(.caption).bold()
-                    Text(cvm.p1!.team.abbr).font(.caption).foregroundStyle(.tertiary)
+                    Text("\(cvm.p1.firstName) \(cvm.p1.lastName)").font(.caption).bold()
+                    Text(cvm.p1.team.abbr).font(.caption).foregroundStyle(.tertiary)
                 }.padding(.leading)
                 
                 Spacer()
                 
                 HStack {
-                    Text(cvm.p2!.team.abbr).font(.caption).foregroundStyle(.tertiary)
-                    Text("\(cvm.p2!.firstName) \(cvm.p2!.lastName)").font(.caption).bold()
+                    Text(cvm.p2.team.abbr).font(.caption).foregroundStyle(.tertiary)
+                    Text("\(cvm.p2.firstName) \(cvm.p2.lastName)").font(.caption).bold()
                     Rectangle().fill(Color(t2.priColor)).frame(width: 10, height: 10)
                 }.padding(.trailing)
             }
@@ -351,7 +357,7 @@ struct PlayerCompareView: View {
                         }
                         .padding(.top, 6)
                         
-                        let pn = w == 1 ? "\(cvm.p1!.firstName) \(cvm.p1!.lastName)" : "\(cvm.p2!.firstName) \(cvm.p2!.lastName)"
+                        let pn = w == 1 ? "\(cvm.p1.firstName) \(cvm.p1.lastName)" : "\(cvm.p2.firstName) \(cvm.p2.lastName)"
                         
                         Text("Advantage \(pn)").foregroundStyle(.ultraThickMaterial).bold().padding(.leading, -20).padding(.trailing)
                     }
@@ -394,7 +400,7 @@ struct PlayerCompareView: View {
                             )
                             .foregroundStyle(
                                     .linearGradient(
-                                        colors: [data.color, data.color.opacity(0.4)], startPoint: .top, endPoint: .bottom
+                                        colors: [data.color, data.color.opacity(0.2)], startPoint: .top, endPoint: .bottom
                                     )
                                 )
                             .annotation(position: .top) {
@@ -471,8 +477,8 @@ struct PlayerCompareView: View {
                         }
                         
                         if chartData.count > 1 {
-                            let totalChg1 = playerDataManager.getTotalChange(chartData: chartData[0])
-                            let totalChg2 = playerDataManager.getTotalChange(chartData: chartData[1])
+                            let totalChg1 = cvm.getTotalChange(chartData: chartData[0])
+                            let totalChg2 = cvm.getTotalChange(chartData: chartData[1])
                             
                             HStack {
                                 HStack {
@@ -488,8 +494,8 @@ struct PlayerCompareView: View {
                                     }
                                     .frame(maxHeight: 30)
                                     
-                                    Image(systemName: playerDataManager.getChangeImage(pc: totalChg1))
-                                        .foregroundStyle(playerDataManager.getChangeTint(pc: totalChg1))
+                                    Image(systemName: cvm.getChangeImage(pc: totalChg1))
+                                        .foregroundStyle(cvm.getChangeTint(pc: totalChg1))
                                     
                                     Text("\(String(format: "%.1f", (totalChg1)))")
                                 }
@@ -500,8 +506,8 @@ struct PlayerCompareView: View {
                                     .frame(maxHeight: 30)
                                 
                                 HStack {
-                                    Image(systemName: playerDataManager.getChangeImage(pc: totalChg2))
-                                        .foregroundStyle(playerDataManager.getChangeTint(pc: totalChg2))
+                                    Image(systemName: cvm.getChangeImage(pc: totalChg2))
+                                        .foregroundStyle(cvm.getChangeTint(pc: totalChg2))
                                     
                                     Text("\(String(format: "%.1f", (totalChg2)))")
                                     
@@ -532,7 +538,7 @@ struct PlayerCompareView: View {
             
             HStack {
                 Picker("Criteria", selection: $criteria) {
-                    ForEach(playerDataManager.compareCategories, id: \.self) {
+                    ForEach(cvm.compareCategories, id: \.self) {
                         Text($0)
                     }
                 }
@@ -563,9 +569,11 @@ struct PlayerCompareView: View {
     }
     
     func getMatchupData() async {
-        await cvm.compareStats(p1ID: "\(cvm.p1!.playerID)", p2ID: "\(cvm.p2!.playerID)", criteria: criteria)
+        dataReady = false
         
-        data = [await playerDataManager.getPlayerGameStats(pID: cvm.p1!.playerID, season: season), await playerDataManager.getPlayerGameStats(pID: cvm.p2!.playerID, season: season)]
+        await cvm.compareStats(p1ID: "\(cvm.p1.playerID)", p2ID: "\(cvm.p2.playerID)", criteria: criteria)
+        
+        data = [await playerDataManager.getPlayerGameStats(pID: cvm.p1.playerID, season: season), await playerDataManager.getPlayerGameStats(pID: cvm.p2.playerID, season: season)]
         
         filterData()
     }
@@ -610,7 +618,7 @@ struct PlayerCompareView: View {
         if splitBy == 0 {
             let totals = [getChartY(criterion: criteria, playerIndex: 0), getChartY(criterion: criteria, playerIndex: 1)]
             
-            chartData = [[GameStat(gameID: "1", gameDate: "", matchup: "", sort: cvm.p1?.firstName ?? "Player 1", val: totals[0], player: cvm.p1, color: Color(cvm.p1?.team.priColor ?? .blue)), GameStat(gameID: "2", gameDate: "", matchup: "", sort: cvm.p2?.firstName ?? "Player 2", val: totals[1], player: cvm.p2, color: Color(cvm.p2?.team.priColor ?? .red))]]
+            chartData = [[GameStat(gameID: "1", gameDate: "", matchup: "", sort: cvm.p1.firstName, val: totals[0], player: cvm.p1, color: Color(cvm.p1.team.priColor)), GameStat(gameID: "2", gameDate: "", matchup: "", sort: cvm.p2.firstName, val: totals[1], player: cvm.p2, color: Color(cvm.p2.team.priColor))]]
         // line chart data
         } else {
             let values = [getChartY(criterion: criteria, dataSet: filteredData[0]), getChartY(criterion: criteria, dataSet: filteredData[1])]
@@ -619,11 +627,11 @@ struct PlayerCompareView: View {
             var cd2: [GameStat] = []
             
             for i in filteredData[0].indices {
-                cd1.append(GameStat(gameID: filteredData[0][i].gameID, gameDate: filteredData[0][i].gameDate, matchup: filteredData[0][i].matchup, sort: "\(i)", val: values[0][i], player: cvm.p1, color: Color(cvm.p1?.team.priColor ?? .blue)))
+                cd1.append(GameStat(gameID: filteredData[0][i].gameID, gameDate: filteredData[0][i].gameDate, matchup: filteredData[0][i].matchup, sort: "\(i)", val: values[0][i], player: cvm.p1, color: Color(cvm.p1.team.priColor)))
             }
             
             for i in filteredData[1].indices {
-                cd2.append(GameStat(gameID: filteredData[1][i].gameID, gameDate: filteredData[1][i].gameDate, matchup: filteredData[1][i].matchup, sort: "\(i)", val: values[1][i], player: cvm.p2, color: Color(cvm.p2?.team.priColor ?? .red)))
+                cd2.append(GameStat(gameID: filteredData[1][i].gameID, gameDate: filteredData[1][i].gameDate, matchup: filteredData[1][i].matchup, sort: "\(i)", val: values[1][i], player: cvm.p2, color: Color(cvm.p2.team.priColor)))
             }
             
             chartData = [cd1, cd2]

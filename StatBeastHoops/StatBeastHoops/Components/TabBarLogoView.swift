@@ -8,13 +8,14 @@
 import SwiftUI
 
 struct TabBarLogoView: View {
-    @Binding var myTeamID : Int
+    @EnvironmentObject var settingsManager : SettingsManager
+//    @Binding var myTeamID : Int
     
     var body: some View {
-        Image(uiImage: Team.teamData.first(where: { $0.teamID == myTeamID})?.thumbnail ?? Team.teamData[30].thumbnail)
+        Image(uiImage: Team.teamData.first(where: { $0.teamID == settingsManager.settingsDict["faveTeamID"] as! Int})?.thumbnail ?? Team.teamData[30].thumbnail)
     }
 }
 
 #Preview {
-    TabBarLogoView(myTeamID: .constant(Team.teamData[30].teamID))
+    TabBarLogoView().environmentObject(SettingsManager())
 }

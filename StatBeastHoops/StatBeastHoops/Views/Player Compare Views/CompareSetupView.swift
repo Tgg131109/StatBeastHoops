@@ -11,12 +11,14 @@ struct CompareSetupView: View {
     @EnvironmentObject var playerDataManager : PlayerDataManager
     @EnvironmentObject var favoritesManager : FavoritesManager
     
-    @StateObject var cvm : CompareViewModel
+    @StateObject var cvm: CompareViewModel
     
     @State private var season = "2023-24"
     @State private var seasonType = "Regular Season"
     
-    let seasonTypes = ["Preseason","Regular Season", "Postseason", "All-Star", "Play In", "In-Season Tournament"]
+    @Binding var dataReady: Bool
+    
+    let seasonTypes = ["Preseason", "Regular Season", "Postseason", "All-Star", "Play In", "In-Season Tournament"]
     
     var body: some View {
         NavigationStack {
@@ -26,11 +28,11 @@ struct CompareSetupView: View {
                         Text("Player 1")
                         
                         NavigationLink {
-                            PlayerSearchView(cvm: cvm, p: 1)
+                            PlayerSearchView(cvm: cvm, dataReady: $dataReady, p: 1)
                         } label: {
                             HStack {
                                 Spacer()
-                                Text("\(cvm.p1!.firstName) \(cvm.p1!.lastName)").foregroundStyle(.secondary)
+                                Text("\(cvm.p1.firstName) \(cvm.p1.lastName)").foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -39,15 +41,15 @@ struct CompareSetupView: View {
                         Text("Player 2")
 
                         NavigationLink {
-                            PlayerSearchView(cvm: cvm, p: 2)
+                            PlayerSearchView(cvm: cvm, dataReady: $dataReady, p: 2)
                         } label: {
                             HStack {
                                 Spacer()
-                                Text("\(cvm.p2!.firstName) \(cvm.p2!.lastName)").foregroundStyle(.secondary)
+                                Text("\(cvm.p2.firstName) \(cvm.p2.lastName)").foregroundStyle(.secondary)
                             }
                         }
                     }
-                }//.listRowBackground(Material.regularMaterial)
+                }
                 
                 Section("Filters") {
                     Picker("Season", selection: $season) {
@@ -64,42 +66,65 @@ struct CompareSetupView: View {
                 }
                 
                 Section("Saved Matchups") {
-//                    if favoritesManager.getMatchups().isEmpty {
-//                        ZStack {
-////                            Image(uiImage: Team.teamData[30].logo).resizable().aspectRatio(contentMode: .fill).opacity(0.2).padding().blur(radius: 3.0)
-//                            
-//                            Text("No saved matchups").foregroundStyle(.tertiary)
-//                        }
-//                    } else {
-//                        ForEach(favoritesManager.getMatchups(), id: \.self) { player in
-//                            NavigationLink {
-////                                PlayerDetailView(playerDataManager: playerDataManager, p: player)
-//                            } label: {
-////                                HStack {
-////                                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(player.playerID).png")) { image in
-////                                        image
-////                                            .resizable()
-////                                            .scaledToFit()
-////                                    } placeholder: {
-////                                        Image(uiImage: player.team.logo).resizable().aspectRatio(contentMode: .fill)
-////                                    }
-////                                    .frame(width: 40, height: 30, alignment: .bottom)
-////
-////                                    Text("\(player.firstName) \(player.lastName)")
-////                                }
-//                            }
-//                        }
-//                    }
+                    if favoritesManager.getMatchups().isEmpty {
+                        ZStack {
+                            Text("No saved matchups").foregroundStyle(.tertiary)
+                        }
+                    } else {
+                        ForEach(favoritesManager.getMatchups(), id: \.id) { matchup in
+                            Button(action: {
+                                withAnimation {
+                                    cvm.p1 = matchup.p1
+                                    cvm.p2 = matchup.p2
+                                }
+                            }, label: {
+                                ZStack {
+                                    Text("vs").foregroundStyle(.secondary)
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                    
+                                    HStack {
+                                        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(matchup.p1.playerID).png")) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFit()
+                                        } placeholder: {
+                                            Image(uiImage: matchup.p1.team.logo).resizable().aspectRatio(contentMode: .fill)
+                                        }
+                                        .frame(width: 40, height: 30, alignment: .bottom)
+                                        
+                                        Text(matchup.p1.firstName)
+                                        
+                                        Spacer()
+                                        
+                                        Text(matchup.p2.firstName)
+                                        
+                                        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(matchup.p2.playerID).png")) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFit()
+                                        } placeholder: {
+                                            Image(uiImage: matchup.p2.team.logo).resizable().aspectRatio(contentMode: .fill)
+                                        }
+                                        .frame(width: 40, height: 30, alignment: .bottom)
+                                    }
+                                }
+                            })
+                            .tint(.primary)
+                        }
+                    }
                 }
             }
             .listStyle(.insetGrouped)
             
             Button("Apply and Compare") {
                 Task {
-                    await cvm.compareStats(p1ID: "\(cvm.p1!.playerID)", p2ID: "\(cvm.p2!.playerID)", criteria: "PTS")
+                    dataReady = false
+                    await cvm.compareStats(p1ID: "\(cvm.p1.playerID)", p2ID: "\(cvm.p2.playerID)", criteria: "PTS")
+                    cvm.updateCharts = true
+                    dataReady = true
                 }
                 
-                playerDataManager.showCompareSetup = false
+                cvm.showCompareSetup = false
             }
             .buttonStyle(.borderedProminent)
             .padding()
@@ -110,7 +135,7 @@ struct CompareSetupView: View {
                 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
-                        playerDataManager.showCompareSetup = false
+                        cvm.showCompareSetup = false
                     }
                 }
             }
@@ -120,5 +145,5 @@ struct CompareSetupView: View {
 }
 
 #Preview {
-    CompareSetupView(cvm: CompareViewModel())
+    CompareSetupView(cvm: CompareViewModel(), dataReady: .constant(false)).environmentObject(PlayerDataManager()).environmentObject(FavoritesManager())
 }

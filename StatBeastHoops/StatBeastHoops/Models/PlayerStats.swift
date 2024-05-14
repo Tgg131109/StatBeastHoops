@@ -201,11 +201,19 @@ struct Rankings: Decodable, Encodable {
     }
 }
 
-//struct PlayerCompare {
-//    var p1GameStats: [GameStats]
-//    var p2GameStats: [GameStats]
-//    var p1StatTotals: StatTotals
-//    var p2StatTotals: StatTotals
-//}
+struct PlayerCompare {
+    var matchup: Matchup
+    
+    var statCompare: [StatCompare]
+    var onOffCourtP1: [StatCompare]
+    var onOffCourtP2: [StatCompare]
+    var oppOnCourt: [StatCompare]
+    var oppOffCourt: [StatCompare]
+    
+    var p1GameStats: [GameStats]
+    var p2GameStats: [GameStats]
+    var p1StatTotals: StatTotals?
+    var p2StatTotals: StatTotals?
+}
 
 

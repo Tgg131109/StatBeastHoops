@@ -10,21 +10,19 @@ import SwiftUI
 
 @MainActor
 class CompareViewModel : ObservableObject {
-//    @Published var statCompareSets = [String : [StatCompare]]()
     @Published var compareReady = false
     @Published var statCompare = [StatCompare]()
     @Published var onOffCourtP1 = [StatCompare]()
     @Published var onOffCourtP2 = [StatCompare]()
     @Published var oppOnCourt = [StatCompare]()
     @Published var oppOffCourt = [StatCompare]()
-    @Published var gameStatCompare = [StatSeriesCompare]()
     @Published var gameStats = [StatSeriesAll]()
-    @Published var currentDetent = PresentationDetent.height(400)
-    @Published var needsOverlay = true
-    @Published var showComparePage = false
-    @Published var p1 : Player? = Player.demoPlayer
-    @Published var p2 : Player? = Player.demoPlayer
+    @Published var p1: Player = Player.demoPlayer
+    @Published var p2: Player = Player.demoPlayer
+    @Published var showCompareSetup = false
+    @Published var updateCharts = false
     
+    let compareCategories = ["GP", "GS", "MIN", "FGM", "FGA", "FG%", "FG3M", "FG3A", "FG3%", "FTM", "FTA", "FT%", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TOV", "PF", "PTS", "+/-", "FP", "DD2", "TD3"]
     
     func compareStats(p1ID: String, p2ID: String, criteria: String) async {
         compareReady = false
@@ -409,21 +407,66 @@ class CompareViewModel : ObservableObject {
             }
         }
         
-        getChartData(criteria: criteria, pIDs: pIDs)
+//        getChartData(criteria: criteria, pIDs: pIDs)
     }
     
-    func getChartData(criteria: String, pIDs: [String]) {
-        gameStatCompare.removeAll()
-
-        for pID in pIDs {
-            if let gss = gameStats.first(where: { $0.id == pID}) {
-                let statSeries = gss.statData
-                let p = Int(pID) == p1?.playerID ? p1 : p2
+//    func getChartData(criteria: String, pIDs: [String]) {
+//        gameStatCompare.removeAll()
+//
+//        for pID in pIDs {
+//            if let gss = gameStats.first(where: { $0.id == pID}) {
+//                let statSeries = gss.statData
+//                let p = Int(pID) == p1?.playerID ? p1 : p2
+//                
+//                if let at = statSeries.first(where: { $0.category == "\(criteria)"})?.statData {
+//                    gameStatCompare.append(StatSeriesCompare(id: pID, statSeries: at, color: Color((p?.team.priColor)!)))
+//                }
+//            }
+//        }
+//    }
+    
+    func getTotalChange(chartData : [GameStat]) -> Double {
+        var change = 0.0
+        var chgArr = [Double]()
+        
+        for i in chartData.indices {
+            if i < chartData.count - 1 {
+                let start = chartData[i].val
+                let end = chartData[i + 1].val
+                let result = (end - start)/start * 100
                 
-                if let at = statSeries.first(where: { $0.category == "\(criteria)"})?.statData {
-                    gameStatCompare.append(StatSeriesCompare(id: pID, statSeries: at, color: Color((p?.team.priColor)!)))
+                if !(result.isNaN || result.isInfinite) {
+                    chgArr.append(result)
                 }
             }
         }
+        
+        change = chgArr.reduce(0.0, +)/Double(chgArr.count)
+        
+        return change
+    }
+    
+    func getChangeImage(pc: Double) -> String {
+        var img = "chart.line.uptrend.xyaxis"
+        
+        if pc < 0 {
+            img = "chart.line.downtrend.xyaxis"
+        } else if pc == 0 {
+            img = "chart.line.flattrend.xyaxis"
+        }
+        
+        return img
+    }
+    
+    func getChangeTint(pc: Double) -> Color {
+        var col = Color.green
+        
+        if pc < 0 {
+            col = Color.red
+        } else if pc == 0 {
+            col = Color.primary
+        }
+        
+        return col
     }
 }
