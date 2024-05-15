@@ -450,15 +450,7 @@ struct PlayerCompareView: View {
                                             RuleMark(x: .value("Stat", chartSelection))
                                                 .foregroundStyle(.gray.opacity(0.2))
                                                 .annotation( position: i == 0 ? .top : .bottom, overflowResolution: .init(x: .fit, y: .fit)) {
-                                                    VStack {
-                                                        Text("\(String(format: "%.1f", (chartData[i][chartSelection].val))) \(criteria)")
-                                                        Text("\(chartData[i][chartSelection].matchup)")
-                                                        Text("\(chartData[i][chartSelection].gameDate)")
-                                                    }
-                                                    .font(.footnote)
-                                                    .padding(6)
-                                                    .background(.ultraThinMaterial.opacity(0.2))
-                                                    .clipShape(.rect(cornerRadius: 16))
+                                                    RuleMarkContentView(val: chartData[i][chartSelection].val, criteria: criteria, matchup: chartData[i][chartSelection].matchup, gameDate: chartData[i][chartSelection].gameDate)
                                                 }
                                         }
                                         

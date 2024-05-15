@@ -123,7 +123,6 @@ struct ChartView: View {
             default:
                 barGraph
             }
-            // slide header to move to different types of charts (stat v stat, trends)
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -151,7 +150,7 @@ struct ChartView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(Color(p.team.priColor))
                 .buttonStyle(.borderedProminent)
-                .tint(.secondary)
+                .tint(.white.opacity(0.8))
             }
         }
         .toolbarTitleDisplayMode(.inline)
@@ -171,7 +170,6 @@ struct ChartView: View {
     
     var traditionalHeader: some View {
         HStack {
-//            let _ = testFunction(status: "show Traditional Header")
             ForEach(headerStats.indices, id: \.self) { i in
                 VStack(alignment: .leading) {
                     Text(getValueAsStr(criterion: headerStats[i]))
@@ -203,7 +201,6 @@ struct ChartView: View {
     
     var groupedHeader: some View {
         HStack {
-//            let _ = testFunction(status: "show Grouped Header")
             let stats = ["PTS", "REB", "DEF"]
             let statStr = ["Scoring", "Rebounding", "Defense"]
             
@@ -235,7 +232,6 @@ struct ChartView: View {
     
     var statVstatHeader: some View {
         HStack {
-//            let _ = testFunction(status: "show statVstat Header")
             ForEach(statVstat.indices, id: \.self) { i in
                 VStack(alignment: .leading) {
                     Text(getValueAsStr(criterion: statVstat[i]))
@@ -272,110 +268,55 @@ struct ChartView: View {
     
     var barGraph: some View {
         VStack {
-//            let _ = testFunction(status: "show Bar Graph")
             ZStack(alignment: .top) {
-//                if timeFrameFilter != 0 {
-                    Chart {
-                        ForEach(chartData, id: \.id) { game in
-                            let team = Team.teamData.first(where: { $0.teamID == game.vsTeamID })
-                            
-                            BarMark(
-                                x: .value("Y", game.val),
-                                y: .value("X", game.sort)
-                            )
-                            .foregroundStyle(game.color)
-                            .annotation(position: .trailing) {
-                                Group {
-                                    HStack {
-                                        if sortBy != "Home/Away" {
-                                            Image(uiImage: team!.logo)
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fill)
-                                                .frame(width: 20, height: 20)
-                                        }
-                                        
-                                        Text(headerFilter != 1 ? String(Int(game.val)) : String(format: "%.1f", (Double(game.val) * 100)))
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
+                Chart {
+                    ForEach(chartData, id: \.id) { game in
+                        let team = Team.teamData.first(where: { $0.teamID == game.vsTeamID })
+                        
+                        BarMark(
+                            x: .value("Y", game.val),
+                            y: .value("X", game.sort)
+                        )
+                        .foregroundStyle(game.color)
+                        .annotation(position: .trailing) {
+                            Group {
+                                HStack {
+                                    if sortBy != "Home/Away" {
+                                        Image(uiImage: team!.logo)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 20, height: 20)
                                     }
+                                    
+                                    Text(headerFilter != 1 ? String(Int(game.val)) : String(format: "%.1f", (Double(game.val) * 100)))
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
                                 }
                             }
                         }
-                        .clipShape(.rect(cornerRadius: 10))
-//                        .clipShape(Capsule())
                     }
-                    .chartLegend(.hidden)
-                    .chartXAxis {
-                        if headerStats[headerFilter].contains("PCT") {
-                            AxisMarks(
-                                format: Decimal.FormatStyle.Percent.percent.scale(100)
-                            )
-                        } else {
-                            AxisMarks()
+                    .clipShape(.rect(cornerRadius: 10))
+                }
+                .chartLegend(.hidden)
+                .chartXAxis {
+                    if headerStats[headerFilter].contains("PCT") {
+                        AxisMarks(
+                            format: Decimal.FormatStyle.Percent.percent.scale(100)
+                        )
+                    } else {
+                        AxisMarks()
+                    }
+                }
+                .chartYAxis {
+                    if sortBy != "Vs Team" && sortBy != "Game" {
+                        AxisMarks() { _ in
+//                            AxisGridLine().foregroundStyle(.clear)
+//                            AxisTick().foregroundStyle(.clear)
+                            AxisValueLabel()
                         }
                     }
-                    .chartYAxis {
-                        if sortBy != "Vs Team" && sortBy != "Game" {
-                            AxisMarks() { _ in
-//                                AxisGridLine().foregroundStyle(.clear)
-//                                AxisTick().foregroundStyle(.clear)
-                                AxisValueLabel()
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-//                } else {
-//                    Chart {
-//                        ForEach(chartData, id: \.id) { game in
-//                            let team = Team.teamData.first(where: { $0.teamID == game.vsTeamID })
-//                            
-//                            BarMark(
-//                                x: .value("X", game.sort),
-//                                y: .value("Y", game.val)
-//                            )
-//                            .foregroundStyle(game.color)
-//                            .annotation(position: .top) {
-//                                Group {
-//                                    VStack {
-//                                        if sortBy != "Home/Away" {
-//                                            Image(uiImage: team!.logo)
-//                                                .resizable()
-//                                                .aspectRatio(contentMode: .fill)
-//                                                .frame(width: 20, height: 20)
-//                                        }
-//                                        
-//                                        Text(headerFilter != 1 ? String(Int(game.val)) : String(format: "%.1f", (Double(game.val) * 100)))
-//                                            .font(.caption)
-//                                            .foregroundColor(.gray)
-//                                    }
-//                                }
-//                            }
-//                        }
-//                        .clipShape(Capsule())
-//                    }
-//                    .chartLegend(.hidden)
-//                    .chartYAxis {
-//                        if headerStats[headerFilter].contains("PCT") {
-//                            AxisMarks(
-//                                format: Decimal.FormatStyle.Percent.percent.scale(100)
-//                            )
-//                        } else {
-//                            AxisMarks()
-//                        }
-//                    }
-//                    .chartXAxis {
-//                        AxisMarks() { _ in
-//                            // AxisGridLine().foregroundStyle(.clear)
-//                            // AxisTick().foregroundStyle(.clear)
-//                            if sortBy != "Vs Team" {
-//                                AxisValueLabel()
-//                            }
-//                        }
-//                    }
-//                    .chartScrollableAxes(.horizontal)
-//                    .padding(.horizontal)
-//                }
-                
+                }
+                .padding(.horizontal)
                 sortByView
             }
             
@@ -385,7 +326,6 @@ struct ChartView: View {
     
     var pieChart: some View {
         VStack {
-//            let _ = testFunction(status: "show Pie Chart")
             if !dataTotals.isEmpty {
                 Chart(pieChartData) { pcd in
                     SectorMark(
@@ -583,7 +523,6 @@ struct ChartView: View {
             }
             .padding([.vertical, .horizontal])
             .frame(maxWidth: .infinity, maxHeight: 100)
-//            .overlay(content: { if !dataReady { ShimmerEffectBox() } })
             .background(.regularMaterial)
             .clipShape(.rect(cornerRadius: 16))
             .shadow(radius: 10)
@@ -593,7 +532,6 @@ struct ChartView: View {
     
     var lineChart: some View {
         VStack {
-//            let _ = testFunction(status: "show Line Chart")
             ZStack(alignment: .bottom) {
                 let linearGradient = LinearGradient(gradient: Gradient(colors: [Color(p.team.priColor).opacity(0.4), Color(p.team.priColor).opacity(0)]), startPoint: .top, endPoint: .bottom)
                 
@@ -609,17 +547,9 @@ struct ChartView: View {
                         
                         if let chartSelection {
                             RuleMark(x: .value("Stat", chartSelection))
-                                .foregroundStyle(.gray.opacity(0.5))
+                                .foregroundStyle(.gray.opacity(0.2))
                                 .annotation( position: .top, overflowResolution: .init(x: .fit, y: .disabled)) {
-                                    VStack {
-                                        Text("\(String(format: "%.1f", (chartData[chartSelection].val))) \(headerStats[headerFilter])")
-                                        Text("\(chartData[chartSelection].matchup)")
-                                        Text("\(chartData[chartSelection].gameDate)")
-                                    }
-                                    .padding()
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(.rect(cornerRadius: 16))
-                                    .shadow(radius: 10)
+                                    RuleMarkContentView(val: chartData[chartSelection].val, criteria: headerStats[headerFilter], matchup: chartData[chartSelection].matchup, gameDate: chartData[chartSelection].gameDate)
                                 }
                         }
                         
@@ -692,7 +622,6 @@ struct ChartView: View {
     
     var scatterPlot: some View {
         VStack {
-//            let _ = testFunction(status: "show Scatter Plot")
             ZStack(alignment: .top) {
                 Chart(chartData) {
                     PointMark(
@@ -733,6 +662,7 @@ struct ChartView: View {
                         }
                     }
                     .disabled(getBtnDisabled(btn: type))
+                    .foregroundStyle(.white)
                     .buttonStyle(.bordered)
                     .tint(sortBy == type ? Color(p.team.priColor) : .gray)
                     .opacity(sortBy == type ? 1 : 0.6)
@@ -758,7 +688,6 @@ struct ChartView: View {
     }
     
     func filterData() {
-//        let _ = testFunction(status: "Filter Data")
         dataTotals.removeAll()
         filteredData = timeFrameFilter != 0 ? data.suffix(timeFrameFilter) : data
         getCharts()
@@ -791,7 +720,6 @@ struct ChartView: View {
     }
     
     func getCharts() {
-//        let _ = testFunction(status: "Get Charts")
         var cd : [GameStat] = []
         
         let values = getChartY(criterion: headerStats[headerFilter])
@@ -1030,52 +958,6 @@ struct ChartView: View {
         }
         
         return disabled
-    }
-    
-//    func getTotalChange() -> Double {
-//        var change = 0.0
-//        var chgArr = [Double]()
-//        
-//        for i in chartData.indices {
-//            if i < chartData.count - 1 {
-//                let start = chartData[i].val
-//                let end = chartData[i + 1].val
-//                
-//                chgArr.append((end - start)/start * 100)
-//            }
-//        }
-//        
-//        change = chgArr.reduce(0.0, +)/Double(chgArr.count)
-//        
-//        return change
-//    }
-//    
-//    func getChangeImage(pc: Double) -> String {
-//        var img = "chart.line.uptrend.xyaxis"
-//        
-//        if pc < 0 {
-//            img = "chart.line.downtrend.xyaxis"
-//        } else if pc == 0 {
-//            img = "chart.line.flattrend.xyaxis"
-//        }
-//        
-//        return img
-//    }
-    
-    func getChangeTint(pc: Double) -> Color {
-        var col = Color.green
-        
-        if pc < 0 {
-            col = Color.red
-        } else if pc == 0 {
-            col = Color.primary
-        }
-        
-        return col
-    }
-    
-    func testFunction(status: String) {
-        print(status)
     }
 }
 

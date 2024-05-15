@@ -266,19 +266,19 @@ struct GridRow: View {
         case "FGA":
             valueStr = String(format: "%.1f", player.fga ?? -1)
         case "FG_PCT":
-            valueStr = String(format: "%.1f", player.fg_pct ?? -1)
+            valueStr = String(format: "%.1f", (player.fg_pct ?? -1) * 100)
         case "FG3M":
             valueStr = String(format: "%.1f", player.fg3m ?? -1)
         case "FG3A":
             valueStr = String(format: "%.1f", player.fg3a ?? -1)
         case "FG3_PCT":
-            valueStr = String(format: "%.1f", player.fg3_pct ?? -1)
+            valueStr = String(format: "%.1f", (player.fg3_pct ?? -1) * 100)
         case "FTM":
             valueStr = String(format: "%.1f", player.ftm ?? -1)
         case "FTA":
             valueStr = String(format: "%.1f", player.fta ?? -1)
         case "FT_PCT":
-            valueStr = String(format: "%.1f", player.ft_pct ?? -1)
+            valueStr = String(format: "%.1f", (player.ft_pct ?? -1) * 100)
         case "OREB":
             valueStr = String(format: "%.1f", player.oreb ?? -1)
         case "DREB":

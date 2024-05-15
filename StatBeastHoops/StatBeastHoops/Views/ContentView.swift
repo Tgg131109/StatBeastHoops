@@ -43,9 +43,6 @@ struct ContentView: View {
                 }
         }
         .tint(Color(tintColor))
-        .onAppear(perform: {
-//            faveTeamID = settingsManager.settingsDict["faveTeamID"] as! Int
-        })
         .sheet(isPresented: $settingsManager.showSettingsPage) {
             SettingsView().tint(Color(tintColor))
         }

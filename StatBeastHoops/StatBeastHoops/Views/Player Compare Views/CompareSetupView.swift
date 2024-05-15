@@ -57,12 +57,14 @@ struct CompareSetupView: View {
                             Text($0)
                         }
                     }
+                    .disabled(true)
                     
                     Picker("Season Type", selection: $seasonType) {
                         ForEach(seasonTypes, id: \.self) {
                             Text($0)
                         }
                     }
+                    .disabled(true)
                 }
                 
                 Section("Saved Matchups") {
