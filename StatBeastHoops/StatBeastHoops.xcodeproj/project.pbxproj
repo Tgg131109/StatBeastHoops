@@ -335,9 +335,9 @@
 		3AF765342B966A59008C2FA3 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				3AD2E2DD2BB7251D00D72667 /* SignInUpView.swift */,
 				3ACB6E412BA658A30030C24A /* SplashView.swift */,
 				3AF765092B966108008C2FA3 /* ContentView.swift */,
-				3AD2E2DD2BB7251D00D72667 /* SignInUpView.swift */,
 				3A6F51E52BE70E1000E7335C /* TodayView.swift */,
 				3AF765352B966ADE008C2FA3 /* LeadersView.swift */,
 				3AF765392B966B3A008C2FA3 /* FollowingView.swift */,

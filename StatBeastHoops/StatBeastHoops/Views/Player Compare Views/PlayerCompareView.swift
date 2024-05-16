@@ -193,25 +193,33 @@ struct PlayerCompareView: View {
                 
                 // Player images
                 HStack {
-                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p1ID).png")) { image in
-                        image
-                            .resizable()
-                            .scaledToFit()
-                    } placeholder: {
-                        Image(uiImage: t1.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
+                    NavigationLink {
+                        PlayerDetailView(p: t1.roster?.first(where: { $0.playerID == p1ID }) ?? Player.demoPlayer)
+                    } label: {
+                        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p1ID).png")) { image in
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        } placeholder: {
+                            Image(uiImage: t1.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
+                        }
+                        .padding(.top, 6)
+                        .frame(maxWidth: .infinity, maxHeight: 120, alignment: .leading)
                     }
-                    .padding(.top, 6)
-                    .frame(maxWidth: .infinity, maxHeight: 120, alignment: .leading)
                     
-                    AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p2ID).png")) { image in
-                        image
-                            .resizable()
-                            .scaledToFit()
-                    } placeholder: {
-                        Image(uiImage: t2.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
+                    NavigationLink {
+                        PlayerDetailView(p: t2.roster?.first(where: { $0.playerID == p2ID }) ?? Player.demoPlayer)
+                    } label: {
+                        AsyncImage(url: URL(string: "https://cdn.nba.com/headshots/nba/latest/1040x760/\(p2ID).png")) { image in
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        } placeholder: {
+                            Image(uiImage: t2.logo).resizable().aspectRatio(contentMode: .fill).opacity(0.4)
+                        }
+                        .padding(.top, 6)
+                        .frame(maxWidth: .infinity, maxHeight: 120, alignment: .trailing)
                     }
-                    .padding(.top, 6)
-                    .frame(maxWidth: .infinity, maxHeight: 120, alignment: .trailing)
                 }
                 .frame(maxWidth: .infinity, maxHeight: 120)
             }
@@ -359,7 +367,10 @@ struct PlayerCompareView: View {
                         
                         let pn = w == 1 ? "\(cvm.p1.firstName) \(cvm.p1.lastName)" : "\(cvm.p2.firstName) \(cvm.p2.lastName)"
                         
-                        Text("Advantage \(pn)").foregroundStyle(.ultraThickMaterial).bold().padding(.leading, -20).padding(.trailing)
+                        Text("Advantage \(pn)")
+                            .foregroundStyle(.white.opacity(0.8)).bold()
+                            .padding(.leading, -20)
+                            .padding(.trailing)
                     }
                     .frame(maxWidth: .infinity, maxHeight: 80)
                 }

@@ -25,7 +25,6 @@ struct ShimmerEffectBox: View {
     
     var body: some View {
         ZStack {
-            
             LinearGradient (colors: gradientColors, startPoint: startPoint, endPoint: endPoint)
                 .onAppear { withAnimation (.easeInOut (duration: 1)
                     .repeatForever (autoreverses: false)) {

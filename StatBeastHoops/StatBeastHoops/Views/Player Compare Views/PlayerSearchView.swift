@@ -30,14 +30,11 @@ struct PlayerSearchView: View {
         if searchText.isEmpty {
             return playerDataManager.allPlayers
         } else {
-            return playerDataManager.allPlayers.filter { ("\($0.firstName) \($0.lastName)").contains(searchText) }
+            return playerDataManager.allPlayers.filter { ("\($0.firstName) \($0.lastName)").localizedCaseInsensitiveContains(searchText) }
         }
     }
     
     var body: some View {
-        //        ScrollView {
-        //            LazyVGrid(columns: [GridItem(.fixed(100))]) {
-        //            Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
         VStack {
             List(searchResults, id: \.id, selection: $selection) { player in
                 HStack {
@@ -90,6 +87,14 @@ struct PlayerSearchView: View {
                                     Text("\(p.team.abbr)").foregroundStyle(.tertiary).font(.callout)
                                 }
                             }
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    selection.remove(at: selection.firstIndex(where: { $0 == pID})!)
+                                } label: {
+                                    Label("Important", systemImage: "chair")
+                                }
+                                .tint(.red)
+                            }
                         }
                     }
                 }
@@ -98,7 +103,6 @@ struct PlayerSearchView: View {
             
             if selection.count > 2 {
                 Text("TOO MANY PLAYERS SELECTED!")
-                //                selection.remove(at: selection.endIndex)
             }
             
             HStack {

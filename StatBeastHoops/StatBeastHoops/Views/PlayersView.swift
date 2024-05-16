@@ -21,7 +21,7 @@ struct PlayersView: View {
         var sr = playerDataManager.allPlayers
         
         if !searchText.isEmpty {
-            sr = sr.filter { ("\($0.firstName) \($0.lastName)").contains(searchText) }
+            sr = sr.filter { ("\($0.firstName) \($0.lastName)").localizedCaseInsensitiveContains(searchText) }
             if searchScope != "All" {
                 sr = sr.filter { $0.position!.contains(searchScope) }
             }

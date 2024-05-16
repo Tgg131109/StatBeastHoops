@@ -37,7 +37,7 @@ struct SplashView: View {
         .environmentObject(playerDataManager)
         .environmentObject(teamDataManager)
         .environmentObject(settingsManager)
-        .onAppear(perform: {   Task{
+        .onAppear(perform: {   Task {
             // Get team standings
 //            _ = await teamDataManager.getTeamStandings()
             
@@ -74,8 +74,8 @@ struct SplashView: View {
             
             Image(uiImage: UIImage(named: "logo")!)
                 .resizable()
-                .aspectRatio(contentMode: .fill)
-                    .frame(width: 260, height: 30)
+                .aspectRatio(contentMode: .fit)
+                    .frame(width: 260)
                     .opacity(0.5)
                     .shadow(radius: 10)
             
