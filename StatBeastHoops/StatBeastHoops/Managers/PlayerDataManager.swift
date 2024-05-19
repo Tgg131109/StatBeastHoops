@@ -21,6 +21,7 @@ class PlayerDataManager : ObservableObject {
     @Published var blkLeaders = [Player]()
     @Published var stlLeaders = [Player]()
     @Published var fgLeaders = [Player]()
+    @Published var othLeaders = [Player]()
     
 //    @Published var playerHeadshots = [PlayerHeadshot]()
 //    @Published var playerStats = [PlayerStats]()
@@ -30,7 +31,7 @@ class PlayerDataManager : ObservableObject {
     
     
     //    @Published var searchResults : [Player] = []
-    @Published var statCriteria = [String]()
+//    @Published var statCriteria = [String]()
 //    @Published var statCompare = [StatCompare]()
 //    @Published var gameStatCompare = [StatSeriesCompare]()
     //    @Published var gameStats = [StatSeriesAll]()
@@ -54,6 +55,7 @@ class PlayerDataManager : ObservableObject {
     @Published var showCharts = false
     @Published var showGlossary = false
     
+    let leaderTotalCats = ["FGM", "FGA", "FG_PCT", "FG3M", "FG3A", "FG3_PCT", "FTM", "FTA", "FT_PCT", "AST_TO", "STL_TO", "PF"]
     let leaderSeasonTypes = ["Preseason", "Regular Season", "Playoffs"]
     let seasonTypes = ["Preseason","Regular Season", "Postseason", "All-Star", "Play In", "In-Season Tournament"]
     let totalCategories = ["GP", "GS", "MIN", "FGM", "FGA", "FG%", "FG3M", "FG3A", "FG3%", "FTM", "FTA", "FT%", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TOV", "PF", "PTS"]
@@ -76,20 +78,47 @@ class PlayerDataManager : ObservableObject {
         stlLeaders.removeAll()
         fgLeaders.removeAll()
         
-        _ = await getStatLeaders(cat: "PTS", st: st != "Preseason" ? st : "Pre Season")
-        _ = await getStatLeaders(cat: "REB", st: st != "Preseason" ? st : "Pre Season")
-        _ = await getStatLeaders(cat: "AST", st: st != "Preseason" ? st : "Pre Season")
-        _ = await getStatLeaders(cat: "BLK", st: st != "Preseason" ? st : "Pre Season")
-        _ = await getStatLeaders(cat: "STL", st: st != "Preseason" ? st : "Pre Season")
-        _ = await getStatLeaders(cat: "FG_PCT", pm: "Totals", st: st != "Preseason" ? st : "Pre Season")
+        ptsLeaders = await getLeaderData(cat: "PTS", st: st != "Preseason" ? st : "Pre Season")
+        rebLeaders = await getLeaderData(cat: "REB", st: st != "Preseason" ? st : "Pre Season")
+        astLeaders = await getLeaderData(cat: "AST", st: st != "Preseason" ? st : "Pre Season")
+        blkLeaders = await getLeaderData(cat: "BLK", st: st != "Preseason" ? st : "Pre Season")
+        stlLeaders = await getLeaderData(cat: "STL", st: st != "Preseason" ? st : "Pre Season")
+        fgLeaders = await getLeaderData(cat: "FG_PCT", pm: "Totals", st: st != "Preseason" ? st : "Pre Season")
     }
     
-    func getStatLeaders(cat: String, pm: String = "PerGame", st: String = "Regular Season") async {
-        // leagueleaders endpoint
-        // ['PLAYER_ID', 'RANK', 'PLAYER', 'TEAM', 'GP', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS', 'EFF', 'AST_TOV', 'STL_TOV']
-        // pm = "PerGame" - MIN, OREB, DREB, REB, AST, STL, BLK, TOV, EFF, PTS
-        // pm = "Totals" - MIN, FGM, FGA, FG_PCT, FG3M, FG3A, FG3_PCT, FTM, FTA, FT_PCT, OREB, DREB, REB, AST, STL, BLK, TOV, EFF, PTS, AST_TO, STL_TO, PF
-        // Validate URL.
+    func getStatLeaders(crit: String, st: String = "Regular Season") async -> [Player] {
+        var cat = crit
+        var pm = "PerGame"
+        
+        if crit.contains("%") {
+            cat = crit.replacingOccurrences(of: "%", with: "_PCT")
+        }
+        
+        if leaderTotalCats.contains(cat) {
+            pm = "Totals"
+        }
+        
+        switch cat {
+        case "PTS":
+            return ptsLeaders
+        case "REB":
+            return rebLeaders
+        case "AST":
+            return astLeaders
+        case "BLK":
+            return blkLeaders
+        case "STL":
+            return stlLeaders
+        case "FG_PCT":
+            return fgLeaders
+        default:
+            return await getLeaderData(cat: cat, pm: pm, st: st)
+        }
+    }
+    
+    func getLeaderData(cat: String, pm: String = "PerGame", st: String = "Regular Season") async -> [Player] {
+        var leaders: [Player] = []
+        
         guard let validURL = URL(string: "https://stats.nba.com/stats/leagueLeaders?LeagueID=00&PerMode=\(pm)&Scope=S&Season=2023-24&SeasonType=\(st)&StatCategory=\(cat)")
         else { fatalError("Invalid URL")}
         
@@ -108,7 +137,7 @@ class PlayerDataManager : ObservableObject {
                 }
                 
                 print("JSON object creation failed.")
-                return
+                return []
             }
             
             // Create json Object from downloaded data above and cast as [String: Any].
@@ -116,21 +145,15 @@ class PlayerDataManager : ObservableObject {
                 guard let data = jsonObj["resultSet"] as? [String: Any]
                 else {
                     print("This isn't working")
-                    return
+                    return []
                 }
                 
                 guard let headers = data["headers"] as? [Any],
                       let players = data["rowSet"] as? [[Any]]
                 else {
                     print("This isn't working")
-                    return
+                    return []
                 }
-                
-                statCriteria = (headers as? [String] ?? [""])
-                
-                let dni = ["PLAYER_ID", "RANK", "PLAYER", "TEAM_ID", "TEAM"]
-                
-                statCriteria.removeAll(where: { dni.contains($0) })
                 
                 for player in players {
                     var i = 0
@@ -160,27 +183,14 @@ class PlayerDataManager : ObservableObject {
                         }
                     }
                     
-                    switch cat {
-                    case "PTS":
-                        self.ptsLeaders.append(newPlayer)
-                    case "REB":
-                        self.rebLeaders.append(newPlayer)
-                    case "AST":
-                        self.astLeaders.append(newPlayer)
-                    case "BLK":
-                        self.blkLeaders.append(newPlayer)
-                    case "STL":
-                        self.stlLeaders.append(newPlayer)
-                    case "FG_PCT":
-                        self.fgLeaders.append(newPlayer)
-                    default:
-                        break
-                    }
+                    leaders.append(newPlayer)
                 }
             }
         } catch {
-            return
+            return []
         }
+        
+        return leaders
     }
     
     func getAllPlayers(season: String) async {
@@ -207,7 +217,7 @@ class PlayerDataManager : ObservableObject {
                     i += 1
                 }
                 
-                let newPlayer = Player(playerID: p["PERSON_ID"] as! Int, firstName: p["PLAYER_FIRST_NAME"] as! String, lastName: p["PLAYER_LAST_NAME"] as! String, rank: 0, teamID: p["TEAM_ID"] as! Int, jersey: p["JERSEY_NUMBER"] as? String, position: p["POSITION"] as? String, height: p["HEIGHT"] as? String, weight: p["WEIGHT"] as? String, college: p["COLLEGE"] as? String, country: p["COUNTRY"] as? String, draftYear: p["DRAFT_YEAR"] as? Int, draftNum: p["DRAFT_NUMBER"] as? Int, draftRound: p["DRAFT_ROUND"] as? Int)
+                let newPlayer = Player(playerID: p["PERSON_ID"] as! Int, firstName: p["PLAYER_FIRST_NAME"] as! String, lastName: p["PLAYER_LAST_NAME"] as! String, rank: 0, teamID: p["TEAM_ID"] as! Int, jersey: p["JERSEY_NUMBER"] as? String, position: p["POSITION"] as? String, height: p["HEIGHT"] as? String, weight: p["WEIGHT"] as? String, college: p["COLLEGE"] as? String, country: p["COUNTRY"] as? String, draftYear: p["DRAFT_YEAR"] as? Int, draftNum: p["DRAFT_NUMBER"] as? Int, draftRound: p["DRAFT_ROUND"] as? Int, reb: p["REB"] as? Double, ast: p["AST"] as? Double, pts: p["PTS"] as? Double)
                 
                 allPlayers.append(newPlayer)
                 

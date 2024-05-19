@@ -9,10 +9,17 @@ import SwiftUI
 
 @MainActor
 struct ContentView: View {
+    @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var settingsManager : SettingsManager
     
+    @State var showSignIn = false
+    
     var tintColor : UIColor {
-        return settingsManager.settingsDict["accentPref"] as! Bool ? Team.teamData.first(where: { $0.teamID == settingsManager.settingsDict["faveTeamID"] as! Int })?.priColor ?? Player.demoPlayer.team.priColor : UIColor(.accentColor)
+        if authManager.authState == .signedIn {
+            return settingsManager.settingsDict["accentPref"] as! Bool ? Team.teamData.first(where: { $0.teamID == settingsManager.settingsDict["faveTeamID"] as! Int })?.priColor ?? Player.demoPlayer.team.priColor : UIColor(.accentColor)
+        } else {
+            return UIColor(.accentColor)
+        }
     }
     
     var body: some View {
@@ -35,7 +42,8 @@ struct ContentView: View {
             
             TeamsView()
                 .tabItem {
-                    if (settingsManager.settingsDict["faveTeamID"] as! Int) < 32 || !(settingsManager.settingsDict["tabbarPref"] as! Bool) {
+                    if authManager.authState != .signedIn || (settingsManager.settingsDict["faveTeamID"] as! Int) < 32 || !(settingsManager.settingsDict["tabbarPref"] as! Bool)
+                    {
                         Label("Teams", systemImage: "basketball")
                     } else {
                         Label { Text("Teams") } icon: { TabBarLogoView() }
@@ -43,12 +51,27 @@ struct ContentView: View {
                 }
         }
         .tint(Color(tintColor))
+        .fullScreenCover(isPresented: $showSignIn) {
+            SignInUpView(showSignIn: $showSignIn)
+        }
         .sheet(isPresented: $settingsManager.showSettingsPage) {
-            SettingsView().tint(Color(tintColor))
+            SettingsView(showSignIn: $showSignIn).tint(Color(tintColor))
+        }
+        .onAppear(perform: {
+            if authManager.authState == .signedOut {
+                withAnimation {
+                    showSignIn = true
+                }
+            }
+        })
+        .onChange(of: showSignIn) {
+            if settingsManager.showSettingsPage {
+                settingsManager.showSettingsPage = false
+            }
         }
     }
 }
 
 #Preview {
-    ContentView().environmentObject(SettingsManager())
+    ContentView().environmentObject(AuthManager()).environmentObject(SettingsManager())
 }

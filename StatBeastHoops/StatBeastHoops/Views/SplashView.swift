@@ -9,7 +9,7 @@ import SwiftUI
 
 @MainActor
 struct SplashView: View {
-    @StateObject var apiManager = DataManager()
+    @StateObject var authManager = AuthManager()
     @StateObject var teamDataManager = TeamDataManager()
     @StateObject var playerDataManager = PlayerDataManager()
     @StateObject var favoritesManager = FavoritesManager()
@@ -29,7 +29,7 @@ struct SplashView: View {
                 ContentView()
             }
         }
-        .environmentObject(apiManager)
+        .environmentObject(authManager)
         .environmentObject(soundsManager)
         .environmentObject(locationManager)
         .environmentObject(favoritesManager)
@@ -52,7 +52,7 @@ struct SplashView: View {
             // Get all players
             statusStr = "Getting players..."
             _ = await playerDataManager.getAllPlayers(season: "2023-24")
-
+            
             // Get all player stats
 //            statusStr = "Getting player stats..."
 //            _ = await playerDataManager.getAllPlayerStats()

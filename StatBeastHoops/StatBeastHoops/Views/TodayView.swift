@@ -39,7 +39,7 @@ struct TodayView: View {
                             Section {
                                 GridRow(dataReady: $dataReady, criteria: ["STL", "FG_PCT"], leaders: [Array(playerDataManager.stlLeaders.prefix(5)), Array(playerDataManager.fgLeaders.prefix(5))])
                             } header: {
-                                HeaderView(stats: ["Steals", "FG %"])
+                                HeaderView(stats: ["Steals", "FG%"])
                             }
                         }
                         .id(1)
@@ -209,7 +209,7 @@ struct GridRow: View {
         HStack(spacing: 16) {
             ForEach(criteria.indices, id: \.self) { i in
                 NavigationLink {
-                    LeadersView(criterion: criteria[i])
+                    LeadersView(criterion: criteria[i].replacingOccurrences(of: "_PCT", with: "%"))
                 } label: {
                     VStack(spacing: 0) {
                         ForEach(leaders[i], id: \.playerID) { player in

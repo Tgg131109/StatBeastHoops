@@ -14,26 +14,7 @@ struct LeadersView: View {
     
     @State var criteria = [String]()
     @State var criterion: String
-    
-    var leaders: [Player] {
-        switch criterion{
-        case "PTS":
-            return playerDataManager.ptsLeaders
-        case "REB":
-            return playerDataManager.rebLeaders
-        case "AST":
-            return playerDataManager.astLeaders
-        case "STL":
-            return playerDataManager.stlLeaders
-        case "BLK":
-            return playerDataManager.blkLeaders
-        case "FG_PCT":
-            return playerDataManager.fgLeaders
-        default:
-            return playerDataManager.ptsLeaders
-//            return Task { await playerDataManager.getLeaders(cat: criterion) }
-        }
-    }
+    @State var leaders = [Player]()
     
     var body: some View {
         VStack(spacing: 0) {
@@ -44,14 +25,18 @@ struct LeadersView: View {
             }
             .listStyle(.insetGrouped)
             .scrollIndicators(.hidden)
-            .onAppear(perform: {   Task{
-                criteria = playerDataManager.statCriteria
+            .onAppear(perform: {   Task {
+                leaders = await playerDataManager.getStatLeaders(crit: criterion)
+                criteria = playerDataManager.totalCategories
+                criteria.removeAll(where: { $0 == "GP" || $0 == "GS" })
             } })
         }
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("", systemImage: "chevron.backward.circle.fill") {
-                    self.presentationMode.wrappedValue.dismiss()
+            if !playerDataManager.showGlossary {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("", systemImage: "chevron.backward.circle.fill") {
+                        self.presentationMode.wrappedValue.dismiss()
+                    }
                 }
             }
             
@@ -59,25 +44,26 @@ struct LeadersView: View {
                 Text("League Leaders").bold().foregroundStyle(.tertiary)
             }
             
-            ToolbarItem(placement: .topBarTrailing) {
-                HStack {
-                    Picker("League Leaders", selection: $criterion) {
-                        ForEach(criteria, id: \.self) {
-                            Text($0)
+            if !playerDataManager.showGlossary {
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack {
+                        Picker("League Leaders", selection: $criterion) {
+                            ForEach(criteria, id: \.self) {
+                                Text($0)
+                            }
                         }
-                    }
-                    .pickerStyle(.menu)
-                    .onChange(of: criterion) { Task {
-                        await playerDataManager.getStatLeaders(cat: criterion)
-                        //                    leaders = playerDataManager.leaders
-                    } }
-                    
-                    Button("", systemImage:"info.circle") {
-                        withAnimation {
-                            playerDataManager.showGlossary.toggle()
+                        .pickerStyle(.menu)
+                        .onChange(of: criterion) { Task {
+                            leaders = await playerDataManager.getStatLeaders(crit: criterion)
+                        } }
+                        
+                        Button("", systemImage:"info.circle") {
+                            withAnimation {
+                                playerDataManager.showGlossary.toggle()
+                            }
                         }
+                        .tint(.secondary)
                     }
-                    .tint(.secondary)
                 }
             }
         }

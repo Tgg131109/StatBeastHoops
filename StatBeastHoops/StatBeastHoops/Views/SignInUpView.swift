@@ -6,8 +6,25 @@
 //
 
 import SwiftUI
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+import AuthenticationServices
+//import FirebaseAuthUI
+//import FirebaseCore
+//import FirebaseFacebookAuthUI
+//import FirebaseGoogleAuthUI
+//import FirebaseOAuthUI
+//import FirebasePhoneAuthUI
 
 struct SignInUpView: View {
+    @EnvironmentObject var authManager: AuthManager
+    
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.dismiss) var dismiss
+    
+    @Binding var showSignIn: Bool
+    
     @State private var email: String = ""
     @State private var password: String = ""
     
@@ -21,6 +38,8 @@ struct SignInUpView: View {
             Color.clear.background(.ultraThinMaterial)
             
             VStack {
+                Spacer()
+                
                 Image(uiImage: UIImage(named: "logo")!)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -38,24 +57,89 @@ struct SignInUpView: View {
                     .fontWeight(.light)
                     .shadow(radius: 10)
                 
-                Divider()
+                Divider().padding()
+                
+//                Spacer()
+//                
+//                TextField("Email", text: $email)
+//                    .textFieldStyle(.roundedBorder)
+//                
+//                TextField("Password", text: $password)
+//                    .textFieldStyle(.roundedBorder)
                 
                 Spacer()
                 
-                TextField("Email", text: $email)
-                    .textFieldStyle(.roundedBorder)
+                SignInWithAppleButton(
+                    onRequest: { request in
+                        AppleSignInManager.shared.requestAppleAuthorization(request)
+                    },
+                    onCompletion: { result in
+                        handleAppleID(result)
+                    }
+                )
+                .signInWithAppleButtonStyle(colorScheme == .light ? .black : .white)
+                .frame(width: 280, height: 45, alignment: .center)
                 
-                TextField("Password", text: $password)
-                    .textFieldStyle(.roundedBorder)
+                if authManager.authState == .signedOut {
+                    Button {
+                        signAnonymously()
+                    } label: {
+                        Text("Skip")
+                            .font(.body.bold())
+                            .frame(width: 280, height: 45, alignment: .center)
+                    }
+                }
                 
                 Spacer()
             }
             .padding(.horizontal)
         }
-        
+    }
+    
+    func signAnonymously() {
+        Task {
+            do {
+                let result = try await authManager.signInAnonymously()
+                
+                if result?.user != nil {
+                    showSignIn = false
+                }
+            }
+            catch {
+                print("SignInAnonymouslyError: \(error)")
+            }
+        }
+    }
+    
+    func handleAppleID(_ result: Result<ASAuthorization, Error>) {
+        if case let .success(auth) = result {
+            guard let appleIDCredentials = auth.credential as? ASAuthorizationAppleIDCredential else {
+                print("AppleAuthorization failed: AppleID credential not available")
+                return
+            }
+
+            Task {
+                do {
+                    let result = try await authManager.appleAuth(
+                        appleIDCredentials,
+                        nonce: AppleSignInManager.nonce
+                    )
+                    if let result = result {
+                        dismiss()
+                    }
+                } catch {
+                    print("AppleAuthorization failed: \(error)")
+                    // Here you can show error message to user.
+                }
+            }
+        }
+        else if case let .failure(error) = result {
+            print("AppleAuthorization failed: \(error)")
+            // Here you can show error message to user.
+        }
     }
 }
 
 #Preview {
-    SignInUpView()
+    SignInUpView(showSignIn: .constant(true)).environmentObject(AuthManager())
 }

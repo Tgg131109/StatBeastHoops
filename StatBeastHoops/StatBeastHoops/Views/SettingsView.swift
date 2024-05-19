@@ -8,12 +8,13 @@
 import SwiftUI
 
 struct SettingsView: View {
-//    @EnvironmentObject var apiManager : DataManager
-    @EnvironmentObject var settingsManager : SettingsManager
-    @EnvironmentObject var locationManager : LocationManager
-    @EnvironmentObject var soundsManager : SoundsManager
+    @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var settingsManager: SettingsManager
+    @EnvironmentObject var locationManager: LocationManager
+    @EnvironmentObject var soundsManager: SoundsManager
     
-//    @State private var teams = Team.teamData
+    @Binding var showSignIn: Bool
+    
     @State private var faveTeamID = Team.teamData[30].teamID
     
     @State private var userName = "StatBeast1234"
@@ -24,7 +25,11 @@ struct SettingsView: View {
     
     @State private var team = Team.teamData[30]
     
-//    @Binding var myTeamID : Int
+    @State private var needSignIn = false
+    
+    var signedUp: Bool {
+        return authManager.authState == .signedIn
+    }
     
     var body: some View {
         NavigationStack {
@@ -54,18 +59,27 @@ struct SettingsView: View {
             .toolbarTitleDisplayMode(.inline)
         }
         .onAppear(perform: {
-            let id = settingsManager.settingsDict["faveTeamID"] as? Int
-            let un = settingsManager.settingsDict["userName"] as? String
-            let ap = settingsManager.settingsDict["accentPref"] as? Bool
-            let tp = settingsManager.settingsDict["tabbarPref"] as? Bool
-            let sp = settingsManager.settingsDict["soundPref"] as? Bool
-
-            faveTeamID = (id ?? team.teamID)
-            team = Team.teamData.first(where: { $0.teamID == faveTeamID }) ?? Team.teamData[30]
-            userName = un ?? "StatBeast1234"
-            teamAccentColor = ap ?? true
-            teamTabIcon = tp ?? true
-            playSounds = sp ?? true
+            if signedUp {
+                let id = settingsManager.settingsDict["faveTeamID"] as? Int
+                let un = settingsManager.settingsDict["userName"] as? String
+                let ap = settingsManager.settingsDict["accentPref"] as? Bool
+                let tp = settingsManager.settingsDict["tabbarPref"] as? Bool
+                let sp = settingsManager.settingsDict["soundPref"] as? Bool
+                
+                faveTeamID = (id ?? team.teamID)
+                team = Team.teamData.first(where: { $0.teamID == faveTeamID }) ?? Team.teamData[30]
+                userName = un ?? "StatBeast1234"
+                teamAccentColor = ap ?? true
+                teamTabIcon = tp ?? true
+                playSounds = sp ?? true
+            } else {
+                userName = "user\(authManager.user?.uid.suffix(7) ?? "1234")"
+            }
+        })
+        .onDisappear(perform: {
+            if needSignIn {
+                showSignIn = true
+            }
         })
     }
     
@@ -88,7 +102,9 @@ struct SettingsView: View {
         }
         .frame(maxWidth: .infinity)
         .onTapGesture {
-            editUserName = true
+            if signedUp {
+                editUserName = true
+            }
         }
         .alert("Edit Username", isPresented: $editUserName) {
             TextField(userName, text: $userName).multilineTextAlignment(.center)
@@ -103,7 +119,12 @@ struct SettingsView: View {
     }
     
     var menu: some View {
-        Section {
+        Section(header: VStack { if !signedUp {
+            Text("Sign up for customization options")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+        } }) {
             Menu {
                 Picker("Favorite Team", selection: $faveTeamID) {
                     ForEach(Team.teamData, id: \.teamID) { t in
@@ -136,10 +157,12 @@ struct SettingsView: View {
                     Image(systemName: "chevron.up.chevron.down")
                 }
             }
+            .disabled(!signedUp)
             
             Toggle(isOn: $teamAccentColor) {
                 Text("Favorite team accent color")
             }
+            .disabled(!signedUp)
             .onChange(of: teamAccentColor) {
                 settingsManager.settingsDict["accentPref"] = teamAccentColor
                 settingsManager.save()            }
@@ -147,6 +170,7 @@ struct SettingsView: View {
             Toggle(isOn: $teamTabIcon) {
                 Text("Favorite team logo tab bar")
             }
+            .disabled(!signedUp)
             .onChange(of: teamTabIcon) {
                 settingsManager.settingsDict["tabbarPref"] = teamTabIcon
                 settingsManager.save()
@@ -192,23 +216,41 @@ struct SettingsView: View {
                 }
             }
             .frame(maxWidth: .infinity)
+            .disabled(!signedUp)
         }
     }
     
     var logoutBtn: some View {
         Section {
-            Button("Sign Out") {
+            Button(signedUp ? "Sign Out" : "Sign Up") {
                 withAnimation {
-//                    playerDataManager.showCharts = false
+                    if signedUp {
+                        signOut()
+                    } else {
+                        settingsManager.showSettingsPage = false
+                        needSignIn = true
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
-            .listRowBackground(Color(.red))
+            .listRowBackground(Color(signedUp ? .red : .blue))
             .foregroundStyle(.white)
+        }
+    }
+    
+    func signOut() {
+        Task {
+            do {
+                try await authManager.signOut()
+                settingsManager.showSettingsPage = false
+                needSignIn = true
+            } catch {
+                print("Error: \(error)")
+            }
         }
     }
 }
 
 #Preview {
-    SettingsView().environmentObject(SettingsManager()).environmentObject(LocationManager()).environmentObject(SoundsManager())
+    SettingsView(showSignIn: .constant(true)).environmentObject(AuthManager()).environmentObject(SettingsManager()).environmentObject(LocationManager()).environmentObject(SoundsManager())
 }
